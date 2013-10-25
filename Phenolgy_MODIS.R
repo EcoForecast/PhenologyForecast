@@ -26,12 +26,14 @@ URL_str = levels(dat$URL)
 file_name = levels(dat$save_dir)
 
 save_path = "/var/www/ge585/"
+year = as.numeric(format(Sys.time(), "%Y"))
 
 for (i in 1:5) {
   
-  MODISSubsets(data.frame(lat=LAT[i],long=LON[i],start.date=2010,end.date=2013),
+  MODISSubsets(data.frame(lat=LAT[i],long=LON[i],start.date=year,end.date=year),
                Product="MOD09A1",Bands=c("sur_refl_day_of_year","sur_refl_qc_500m",
-                                         "sur_refl_state_500m","sur_refl_vzen","sur_refl_b01","sur_refl_b02"),
+                                         "sur_refl_state_500m","sur_refl_vzen",
+                                         "sur_refl_b01","sur_refl_b02","sur_refl_day_of_year"),
                Size=c(1,1), SaveDir = save_path, StartDate=TRUE)
   
   sys_command = paste("wget", URL_str[i])
