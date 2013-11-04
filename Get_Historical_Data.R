@@ -25,12 +25,23 @@ LON = dat$lon
 URL_str = levels(dat$URL)
 file_name = levels(dat$save_dir)
 
-save_path = "/var/www/ge585/"
+save_path = "~/Documents/R/PhenologyForecast/PhenologyForecast" #to test on Angela's computer
+#save_path = "/var/www/ge585/"
+
 year = as.numeric(format(Sys.time(), "%Y"))
 
 for (i in 1:5) {
   
-  MODISSubsets(data.frame(lat=LAT[i],long=LON[i],start.date=year,end.date=year),
+  # to get all data:
+  YR_DOY = GetDates(Product = "MOD09A1", Lat = LAT[i], Long = LON[i])
+  
+  start_yr_doy_str = YR_DOY[1]
+  end_yr_doy_str = YR_DOY[length(YR_DOY)]
+  
+  year_start = as.numeric(substr(start_yr_doy_str,2,5))
+  year_end = as.numeric(substr(end_yr_doy_str,2,5))
+  
+  MODISSubsets(data.frame(lat=LAT[i],long=LON[i],start.date=year_start,end.date=year_end),
                Product="MOD09A1",Bands=c("sur_refl_day_of_year","sur_refl_qc_500m",
                                          "sur_refl_state_500m","sur_refl_vzen",
                                          "sur_refl_b01","sur_refl_b02"),
