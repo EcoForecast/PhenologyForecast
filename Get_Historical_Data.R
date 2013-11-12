@@ -50,7 +50,9 @@ file_name = levels(dat$save_dir)
 
 ######## ######## ######## ######## SET YOUR OWN PATH ######## ######## ######## ######## 
 #save_path = "~/Documents/R/PhenologyForecast/PhenologyForecast" #to test on Angela's computer
-save_path = "/var/www/ge585/"
+#save_path = "/var/www/ge585/"
+# No longer hard-coding...
+save_path = "."
 ######## ######## ######## ######## ######## ######## ######## ######## ######## ######## 
 
 # Initializing arrays to save the start and end year of modis data
