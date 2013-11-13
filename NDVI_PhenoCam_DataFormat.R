@@ -35,7 +35,7 @@ for (i in 1:5) { # for loop over sites
     id_num <- id_num[!is.na(id_num)]
     year_dat = as.numeric(substr(id_num,1,4)) # find the year associated with that day
     
-    # Initializ arrays
+    # Initialize arrays
     band_1_data= rep(NA,length(id_num))
     band_2_data = rep(NA,length(id_num))
     DOY_data = rep(NA,length(id_num))
@@ -61,8 +61,11 @@ for (i in 1:5) { # for loop over sites
     
     NDVI_cal = (band_2_data - band_1_data) / (band_2_data + band_1_data) # Calculate NDVI
     
-    MODIS_DATA_ST = data.frame(site_id = site_ID, date = date_format, NDVI = NDVI_cal)
-    MODIS_DATA_ST = subset(MODIS_DATA_ST, date!=NA) # Delete day 366 (leap year)
+    MODIS_DATA_ST <- data.frame(site_id = site_ID, date = date_format, NDVI = NDVI_cal)
+    # Need to delete leap days...
+    leap_days <- is.na(MODIS_DATA_ST)
+    MODIS_DATA_ST <- as.data.frame(subset.data.frame(MODIS_DATA_ST,!leap_days[,2]))
+    # leap days deleted!      
         
     # load phenocam data
     pheno_filename = file_name[i]
@@ -93,7 +96,7 @@ for (i in 1:5) { # for loop over sites
     
     }
 
-    
+write.csv(HISTORICAL_DATA,file="full_historical_data.csv")  
 
 
 

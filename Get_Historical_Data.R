@@ -15,8 +15,31 @@
 #
 # write.table(dat,"phen_sites.csv",row.names=FALSE,sep=",") 
 
-require('devtools')
-require('MODISTools')
+
+loaded <- require('devtools')
+if(!loaded){
+  print("trying to install devtools")
+  install.packages("devtools")
+  loaded <- require('devtools')
+  if(loaded){
+    print("devtools installed and loaded")
+  } else {
+      stop("could not install devtools")
+  }    
+}
+
+loaded <- require('MODISTools')
+if(!loaded){
+  print("trying to install MODISTools")
+  install.packages("MODISTools")
+  loaded <- require('MODISTools')
+  if(loaded){
+    print("MODISTools installed and loaded")
+  } else {
+    stop("could not install MODISTools")
+  }    
+}
+
 
 dat = read.table("phen_sites.csv",header = TRUE, sep=",") # dat has site specs
 
@@ -26,8 +49,10 @@ URL_str = levels(dat$URL)
 file_name = levels(dat$save_dir)
 
 ######## ######## ######## ######## SET YOUR OWN PATH ######## ######## ######## ######## 
-save_path = "~/Documents/R/PhenologyForecast/PhenologyForecast" #to test on Angela's computer
+#save_path = "~/Documents/R/PhenologyForecast/PhenologyForecast" #to test on Angela's computer
 #save_path = "/var/www/ge585/"
+# No longer hard-coding...
+save_path = "."
 ######## ######## ######## ######## ######## ######## ######## ######## ######## ######## 
 
 # Initializing arrays to save the start and end year of modis data
