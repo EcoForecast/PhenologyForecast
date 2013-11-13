@@ -12,7 +12,7 @@ model{
 
   ### Loop over all sites
   for(i in 1:num_sites){
-    data ~ data[g$site_ID==i];
+    data ~ data[data$site_ID==i];
     
     ### loop over all dates
     for (j in 1:num_dates) {
