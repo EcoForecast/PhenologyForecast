@@ -79,6 +79,9 @@ hist_data = read.csv("full_historical_data.csv")
 # loop over the 5 sites, running the JAGS model on each one.
 SITE_NAME = c("Coweeta","Shalehillsczo","Howland","Shenandoah","Bartlett")
 
+# initiate output list to populate with output
+output = list()
+
 for(j in 1:5){
 ## pull out NDVI
 ndvi=hist_data$NDVI[hist_data$site_ID==j]
@@ -90,6 +93,6 @@ gcc=hist_data$GCC[hist_data$site_ID==j]
 ## define number of iterations here
 jags.out=RunJAGS(data,n.iter=100)
 
-### how to make this be 5 different files?
-#out<-as.matrix(jags.out)
+### creates 5 different list indices for the five different sites
+output[[j]] <- jags.out
 }
