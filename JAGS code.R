@@ -93,6 +93,6 @@ gcc=hist_data$GCC[hist_data$site_ID==j]
 ## define number of iterations here
 jags.out=RunJAGS(data,n.iter=100)
 
-### how to make this be 5 different files?
+### creates 5 different list indices for the five different sites
 output[[j]] <- jags.out
 }
