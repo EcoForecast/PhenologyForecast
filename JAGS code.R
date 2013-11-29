@@ -1,4 +1,4 @@
-## add MCMC diagnostics, check distributions and priors
+## check distributions and priors
 
 # load data frame with phenocam and modis data
 ### this assumes that NDVi and GCC are already on a 0 to 1 scale.
@@ -157,5 +157,13 @@ for(j in 1:5){
   
 }  
 
-
-# cor(out[,1:2])
+# MCMC diagnostics
+# MCMC diagnostics
+tmp1 <- jags.out[[1]]
+tmp2 <- jags.out[[2]]
+tmp3 <- jags.out[[3]]
+tmp1 <- tmp1[,c(2,3,4,5000,5020,5040,5060,5080,5100)]
+tmp2 <- tmp2[,c(2,3,4,5000,5020,5040,5060,5080,5100)]
+tmp3 <- tmp3[,c(2,3,4,5000,5020,5040,5060,5080,5100)]
+tmp_list <- mcmc.list(tmp1,tmp2,tmp3)
+plot(tmp_list,trace=TRUE,density=TRUE,smooth=FALSE,auto.layout=TRUE,ask=dev.interactive())
