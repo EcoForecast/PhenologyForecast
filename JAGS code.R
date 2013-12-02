@@ -40,8 +40,8 @@ RunJAGS <- function(data,n.iter){
   ######## what should these priors be????
   y=ndvi
   z=gcc
-  data <- list(y = ndvi,z = gcc,n=length(y),x_ic=1,tau_ic=0.000001,
-               a_ndvi=2,r_ndvi=2,a_gcc=2,r_gcc=2,a_add=2,r_add=2)
+  data <- list(y = ndvi,z = gcc,n=length(y),x_ic=1,tau_ic=0.05,
+               a_ndvi=.59,r_ndvi=1.69,a_gcc=3.16,r_gcc=.316,a_add=1.41,r_add=.71)
   
   ##JAGS code
   ModisGCCModel = "
@@ -69,7 +69,7 @@ RunJAGS <- function(data,n.iter){
   tau_ndvi ~ dgamma(a_ndvi,r_ndvi)
   tau_gcc ~ dgamma(a_gcc,r_gcc)
   tau_add ~ dgamma(a_add,r_add)
-  r ~ dnorm(0.5,0.5)
+  r ~ dnorm(0.5,110)
   }"
     
   ## JAGS initial conditions
