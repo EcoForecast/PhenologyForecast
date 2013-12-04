@@ -9,6 +9,10 @@ SITE_NAME = c("Coweeta","Shalehillsczo","Howland","Shenandoah","Bartlett")
 
 # initiate output list to populate with output
 output = list()
+ndvi_max_st= numeric()
+ndvi_min_st= numeric()
+gcc_max_st = numeric()
+gcc_min_st = numeric()
 
 for(j in 1:5){
   ## pull out NDVI
@@ -19,6 +23,30 @@ for(j in 1:5){
   
   # pull out time
   time=hist_data$date[hist_data$site_ID==j] 
+  
+  # Calculate Min/Max NDVI and GCC for each station to be used in the data model.
+  time_year = as.numeric(format(as.Date(hist_data$date[hist_data$site_ID==j]), "%Y"))
+  count = 0;
+  ndvi_max = numeric()
+  ndvi_min = numeric()
+  gcc_max = numeric()
+  gcc_min = numeric()
+  
+  for (YR in 2000:2013) {
+    count = count + 1;
+    II = which(time_year== YR)
+    ndvi_max[count] = max(ndvi[II],na.rm = TRUE)
+    ndvi_min[count] = min(ndvi[II],na.rm = TRUE)
+    gcc_max[count] = max(gcc[II],na.rm = TRUE)
+    gcc_min[count] = min(gcc[II],na.rm = TRUE)
+    
+  }
+  
+  # Store min/max values for each station 
+  ndvi_max_st[j] = mean(ndvi_max[is.finite(ndvi_max)])
+  ndvi_min_st[j] = mean(ndvi_min[is.finite(ndvi_min)])
+  gcc_max_st[j] = mean(gcc_max[is.finite(gcc_max)])
+  gcc_min_st[j] = mean(gcc_min[is.finite(gcc_min)])
   
   # Extract Fall Date 182-365
   VEC1 = c(1:366,rep(c(rep(1:365,3),1:366),3),1:365)
