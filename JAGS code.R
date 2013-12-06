@@ -7,42 +7,10 @@ hist_data = read.csv("full_historical_data.csv")
 # loop over the 5 sites, running the JAGS model on each one.
 SITE_NAME = c("Coweeta","Shalehillsczo","Howland","Shenandoah","Bartlett")
 
-# initiate output list to populate with output
-output = list()
-
-for(j in 1:5){
-  ## pull out NDVI
-  ndvi=hist_data$NDVI[hist_data$site_ID==j]
-  
-  ## pull out GCC
-  gcc=hist_data$GCC[hist_data$site_ID==j] 
-  
-  # pull out time
-  time=hist_data$date[hist_data$site_ID==j] 
-  
-  # Extract Fall Date 182-365
-  VEC1 = c(1:366,rep(c(rep(1:365,3),1:366),3),1:365)
-  Spring_dates = which(VEC1<181)
-  
-  ndvi[Spring_dates] = NA
-  gcc[Spring_dates] = NA
-  
-  # If NDVI is negative, make NA
-  neg_NDVI = which(ndvi<0)
-  ndvi[neg_NDVI] = NA
-}
-
 ### define function that runs JAGS model
 RunJAGS <- function(data,n.iter){
   require(rjags)
-  
-  ## build data object for JAGS
-  ######## what should these priors be????
-  y=ndvi
-  z=gcc
-  data <- list(y = ndvi,z = gcc,n=length(y),x_ic=1,tau_ic=0.05,
-               a_ndvi=.59,r_ndvi=1.69,a_gcc=3.16,r_gcc=.316,a_add=1.41,r_add=.71)
-  
+    
   ##JAGS code
   ModisGCCModel = "
   model{
@@ -60,7 +28,7 @@ RunJAGS <- function(data,n.iter){
   #### Color is the expected new phenology stage given the previous stage and logistic 
   #### subtraction instead of addition in the discrete logistic eqn makes r negative (so logistic goes down).
   for(i in 2:n){
-  color[i] <- x[i-1] - r * x[i-1] * (1-x[i-1]) 
+  color[i] <- max(0,min(1,x[i-1] - r * x[i-1] * (1-x[i-1]) ))
   x[i]~dnorm(color[i],tau_add)
   }
   
@@ -106,10 +74,68 @@ ciEnvelope <- function(x,ylo,yhi,...){
                                       ylo[1])), border = NA,...) 
 }
 
+# initiate output list to populate with output
+output = list()
+ndvi_max_st= numeric()
+ndvi_min_st= numeric()
+gcc_max_st = numeric()
+gcc_min_st = numeric()
+
 for(j in 1:5){
+  ## pull out NDVI
+  ndvi=hist_data$NDVI[hist_data$site_ID==j]
+  
+  ## pull out GCC
+  gcc=hist_data$GCC[hist_data$site_ID==j] 
+  
+  # pull out time
+  time=hist_data$date[hist_data$site_ID==j] 
+  
+  # Calculate Min/Max NDVI and GCC for each station to be used in the data model.
+  time_year = as.numeric(format(as.Date(hist_data$date[hist_data$site_ID==j]), "%Y"))
+  count = 0;
+  ndvi_max = numeric()
+  ndvi_min = numeric()
+  gcc_max = numeric()
+  gcc_min = numeric()
+  
+  for (YR in 2000:2013) {
+    count = count + 1;
+    II = which(time_year== YR)
+    ndvi_max[count] = max(ndvi[II],na.rm = TRUE)
+    ndvi_min[count] = min(ndvi[II],na.rm = TRUE)
+    gcc_max[count] = max(gcc[II],na.rm = TRUE)
+    gcc_min[count] = min(gcc[II],na.rm = TRUE)
+    
+  }
+  
+  # Store min/max values for each station 
+  ndvi_max_st[j] = mean(ndvi_max[is.finite(ndvi_max)])
+  ndvi_min_st[j] = mean(ndvi_min[is.finite(ndvi_min)])
+  gcc_max_st[j] = mean(gcc_max[is.finite(gcc_max)])
+  gcc_min_st[j] = mean(gcc_min[is.finite(gcc_min)])
+  
+  # Extract Fall Date 182-365
+  VEC1 = c(1:366,rep(c(rep(1:365,3),1:366),3),1:365)
+  Spring_dates = which(VEC1<181)
+  
+  ndvi[Spring_dates] = NA
+  gcc[Spring_dates] = NA
+  
+  # If NDVI is negative, make NA
+  neg_NDVI = which(ndvi<0)
+  ndvi[neg_NDVI] = NA
+  
+  ## build data object for JAGS
+  ######## what should these priors be????
+  y=ndvi
+  z=gcc
+  data <- list(y = ndvi,z = gcc,n=length(y),x_ic=1,tau_ic=0.05,
+               a_ndvi=.59,r_ndvi=1.69,a_gcc=3.16,r_gcc=.316,a_add=1.41,r_add=.71)
+
   ## run jags model
   ## define number of iterations here
-  jags.out=RunJAGS(data,n.iter=100)
+  jags.out=RunJAGS(data,n.iter=10)
   
   ### saves output from each site into a list element
   output[[j]] <- jags.out
@@ -119,16 +145,16 @@ for(j in 1:5){
   out <- as.matrix(jags.out)
   x.cols = which(substr(colnames(out),1,1)=="x")   ## which columns are the state variable, x
   ci <- apply((out[,x.cols]),2,quantile,c(0.025,0.5,0.975))
-  
+  pdf("output.pdf") #create output file
   # NDVI
   par(mfrow=c(1,1))
-  plot(time,ci[2,],type='l',ylim=c(0, 5),ylab="NDVI")
+  plot(time,ci[2,],type='l',ylim=c(0, 1),ylab="NDVI")
   ciEnvelope(time,ci[1,],ci[3,],col="lightBlue")
   points(time,ndvi,pch="+",cex=1.5)
   
   # GCC
   par(mfrow=c(1,1))
-  plot(time,ci[2,],type='l',ylim=c(0, 5),ylab="gcc")
+  plot(time,ci[2,],type='l',ylim=c(0, 1),ylab="gcc")
   ciEnvelope(time,ci[1,],ci[3,],col="lightBlue")
   points(time,gcc,pch="+",cex=1.5)
   
@@ -154,7 +180,7 @@ for(j in 1:5){
   sprintf('The correlation coefficient between tau_add and tau_gcc is %f',cor1[2])
   sprintf('The correlation coefficient between tau_add and tau_ndvi is %f',cor1[3])
   sprintf('The correlation coefficient between tau_gcc and tau_ndvi is %f',cor1[6])
-  
+  dev.off()
 }  
 
 # MCMC diagnostics
@@ -166,4 +192,4 @@ tmp1 <- tmp1[,c(2,3,4,5000,5020,5040,5060,5080,5100)]
 tmp2 <- tmp2[,c(2,3,4,5000,5020,5040,5060,5080,5100)]
 tmp3 <- tmp3[,c(2,3,4,5000,5020,5040,5060,5080,5100)]
 tmp_list <- mcmc.list(tmp1,tmp2,tmp3)
-plot(tmp_list,trace=TRUE,density=TRUE,smooth=FALSE,auto.layout=TRUE,ask=dev.interactive())
+plot(tmp_list,trace=TRUE,density=TRUE,smooth=FALSE,auto.layout=TRUE,ask= FALSE )#dev.interactive())
