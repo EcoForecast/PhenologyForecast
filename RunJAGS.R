@@ -7,7 +7,7 @@ RunJAGS <- function(data,n.iter,n.chains){
   model{
   #### Data Model: NDVI
   for(i in 1:n){
-  mu1[i] <-beta0 + beta1*x[i]
+  mu1[i] <- beta0 + beta1*x[i]
   y[i] ~ dnorm(mu1[i],tau_ndvi)
   }
   
@@ -21,7 +21,7 @@ RunJAGS <- function(data,n.iter,n.chains){
   #### Color is the expected new phenology stage given the previous stage and logistic 
   #### subtraction instead of addition in the discrete logistic eqn makes r negative (so logistic goes down).
   for(i in 2:n){
-  color[i] <- max(0,min(1,x[i-1] - r * x[i-1] * (1-x[i-1]) ))
+  color[i] <- max(0, min(1, x[i-1] - r * x[i-1] * (1-x[i-1]) ) )
   x[i]~dnorm(color[i],tau_add)
   }
   
