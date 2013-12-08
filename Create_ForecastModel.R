@@ -1,3 +1,7 @@
+### NOTES 
+## Mtime needs to be defined somehow or replaced
+## NDVI_GCC_filter_sd cannot be 0 because of how we are using it
+
 ## Super Simple Stochastic Logistic Model
 ## X = [phenology]
 ## timestep is in seconds, defaults to 1 day
@@ -98,7 +102,7 @@ plot(Mtime[Msel],NDVI_GCC_m.ci[2,],ylab="NDVI_GCC",xlab="Time",
 ciEnvelope(Mtime[Msel],NDVI_GCC_m.ci[1,],NDVI_GCC_m.ci[3,],col=col.alpha("lightGrey",0.5))
 points(Mtime,NDVI_GCC_filter)    
 for(i in 1:length(NDVI_GCC_filter)){
-  lines(rep(Mtime[i],2),NDVI_GCC_filter[i]+c(-1,1)*LAIr.sd[i])
+  lines(rep(Mtime[i],2),NDVI_GCC_filter[i]+c(-1,1)*NDVI_GCC_filter.sd[i])
 }
 
   ### resampling particle filter
@@ -140,54 +144,12 @@ for(i in 1:length(NDVI_GCC_filter)){
   NDVI_GCC_filter.pr = t(apply(output[,,2],2,tapply,window,mean))
   NDVI_GCC_filter.ci  = apply(NDVI_GCC_filter.pr,2,quantile,c(0.025,0.5,0.975))
   
-  plot(Mtime[Msel],LAIm.ci[2,],ylim=range(c(range(LAIm.ci),range(LAIr,na.rm=TRUE))),
-       type='n',ylab="LAI",xlab="Time")
-  ciEnvelope(Mtime[Msel],LAIm.ci[1,],LAIm.ci[3,],col=col.alpha("lightGrey",0.5))
-  ciEnvelope(Mtime[Msel],LAIpf[1,],LAIpf[3,],col=col.alpha("lightBlue",0.5))
-  ciEnvelope(Mtime[Msel],LAIpr.ci[1,],LAIpr.ci[3,],col=col.alpha("lightGreen",0.5))
-  points(Mtime,LAIr)    
-  for(i in 1:length(LAIr)){
-    if(!is.na(QC[i])){
-      lines(rep(Mtime[i],2),LAIr[i]+c(-1,1)*LAIr.sd[i])
-    }
+  plot(Mtime[Msel],NDVI_GCC_filter.ci[2,],ylim=range(c(range(LAIm.ci),range(NDVI_GCC_filter,na.rm=TRUE))),
+       type='n',ylab="NDVI_GCC",xlab="Time")
+  ciEnvelope(Mtime[Msel],NDVI_GCC_m.ci[1,],NDVI_GCC_m.ci[3,],col=col.alpha("lightGrey",0.5))
+  ciEnvelope(Mtime[Msel],NDVI_GCC_filter.ci[1,],NDVI_GCC_filter.ci[3,],col=col.alpha("lightGreen",0.5))
+  points(Mtime,NDVI_GCC_filter)    
+  for(i in 1:length(NDVI_GCC_filter)){
+      lines(rep(Mtime[i],2),NDVI_GCC_filter[i]+c(-1,1)*LAIr.sd[i])
   }
   
-  ### assess shifts in any parameter values
-  par(mfrow=c(3,5))
-  par(mar=c(2,2,4,0.7))
-  for(i in 1:length(params)){
-    if(is.null(dim(params[[i]]))){ ## parameter is scalar
-      orig = density(hist.params[[1]][[i]])
-      new = density(params[[i]])
-      ylim=range(c(range(new$y),range(orig$y)))
-      plot(orig,main=names(params)[i],xlab=" ",
-           ylim=ylim)
-      lines(new,col=2,lwd=2)
-      text(max(orig$x),ylim[2],
-           paste(format(mean(hist.params[[1]][[i]]),digits=3),
-                 format(sd(hist.params[[1]][[i]]),digits=3)),
-           pos=2)
-      text(max(orig$x),ylim[2]*0.9,
-           paste(format(mean(params[[i]]),digits=3),
-                 format(sd(params[[i]]),digits=3)),
-           pos=2)
-    } else {
-      ## parameter is vector
-      for(j in 1:ncol(params[[i]])){
-        orig = density(hist.params[[1]][[i]][,j])
-        new = density(params[[i]][,j])
-        ylim=range(c(range(new$y),range(orig$y)))
-        plot(orig,main=paste(names(params)[i],j), xlab=" ",
-             ylim=ylim)
-        lines(new,col=2,lwd=2)
-        text(max(orig$x),ylim[2],
-             paste(format(mean(hist.params[[1]][[i]][,j]),digits=3),
-                   format(sd(hist.params[[1]][[i]][,j]),digits=3)),
-             pos=2)
-        text(max(orig$x),ylim[2]*0.9,
-             paste(format(mean(params[[i]][,j]),digits=3),
-                   format(sd(params[[i]][,j]),digits=3)),
-             pos=2)
-      }      
-    }  
-  }
