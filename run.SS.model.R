@@ -1,9 +1,9 @@
 run.SS.model <- function(site_num){
   
-  site_num = 1
   # source functions
   source("find.extreme.GCC.NDVI.R")
   source("RunJAGS.R")
+  source("make.SS.plots.R")
   
   # load historical data, [data number, site_ID, date, NDVI, GCC], 
   # where site ID goes from 1 to 5
@@ -66,8 +66,9 @@ run.SS.model <- function(site_num){
   rescaled_GCC <- (site_data$GCC-min_GCC)/(max_GCC-min_GCC)
   
   count = 0
-  for (YR in 2009:2009) {
+  for (YR in 2000:2012) {
     
+    cat(sprintf("Running state-space model for site %i, year %i\n\n",site_num,YR))
     count = count + 1;
     # gets index of year
     II = which(time_year == YR)
@@ -89,24 +90,24 @@ run.SS.model <- function(site_num){
     # run JAGS model 
     jags.out=RunJAGS(data,n.iter,n.chains)
     jags.out.matrix <- as.matrix(jags.out)
-#    jags.out.all.years.array[,,count] <- jags.out.matrix
+    jags.out.all.years.array[,,count] <- jags.out.matrix
 
-    source("ciEnvelope.R")
-    ci <- apply(( jags.out.matrix[,5:369]),2,quantile,c(0.025,0.5,0.975))
-    plot(1:365,ci[2,],type='l',ylim=c(0, 1),ylab="Rescaled NDVI, GCC")
-    ciEnvelope(1:365,ci[1,],ci[3,],col="lightBlue")
-    points(1:365,rescaled_NDVI_one_year,pch="+",cex=0.8)
-    points(1:365,rescaled_GCC_one_year,pch="o",cex=0.5)
-    lines(1:365,ci[2,],type='l',ylim=c(0, 1),ylab="Rescaled NDVI, GCC")
+#     source("ciEnvelope.R")
+#     ci <- apply(( jags.out.matrix[,5:369]),2,quantile,c(0.025,0.5,0.975))
+#     plot(1:365,ci[2,],type='l',ylim=c(0, 1),ylab="Rescaled NDVI, GCC")
+#     ciEnvelope(1:365,ci[1,],ci[3,],col="lightBlue")
+#     points(1:365,rescaled_NDVI_one_year,pch="+",cex=0.8)
+#     points(1:365,rescaled_GCC_one_year,pch="o",cex=0.5)
+#     lines(1:365,ci[2,],type='l',ylim=c(0, 1),ylab="Rescaled NDVI, GCC")
     
   }
   
   # Make filename and save jags output 
- #file_name = paste('Jags.SS.out.site',as.character(site_num), 'RData',sep=".")
- #save(jags.out.all.years.array, file = file_name)
+  file_name = paste('Jags.SS.out.site',as.character(site_num), 'RData',sep=".")
+  save(jags.out.all.years.array, file = file_name)
   
   # Make plots
-#  make.SS.plots(jags.out.all.years.array,site_data,site_num)
-
+  make.SS.plots(jags.out.all.years.array,site_data$date,rescaled_NDVI,rescaled_GCC,site_num)
+  
   
 }
