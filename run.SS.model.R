@@ -1,6 +1,6 @@
 run.SS.model <- function(site_num){
   
-  site_num = 5
+  #site_num = 5
   # source functions
   source("find.extreme.GCC.NDVI.R")
   source("RunJAGS.R")
@@ -68,9 +68,7 @@ run.SS.model <- function(site_num){
       working_gcc_yr = working_gcc_yr[1:365]
     }
   
-    y = working_ndvi_yr
-    z = working_gcc_yr
-     data <- list(y = working_ndvi_yr,z = working_gcc_yr,n=length(y),x_ic=1,tau_ic=0.05,
+     data <- list(y = working_ndvi_yr,z = working_gcc_yr,n=length(working_ndvi_yr),x_ic=1,tau_ic=0.05,
                   a_ndvi=.59,r_ndvi=1.69,a_gcc=3.16,r_gcc=.316,a_add=1.41,r_add=.71,
                   beta0=beta0, beta1=beta1, beta2 = beta2, beta3 = beta3)
      

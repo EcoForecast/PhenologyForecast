@@ -43,9 +43,9 @@ RunJAGS <- function(data,n.iter,n.chains){
   nchain = n.chains
   init <- list()
   for(i in 1:nchain){
-    y.samp = sample(y,length(y),replace=TRUE)
+    y.samp = sample(data$y,length(data$y),replace=TRUE)
     ########## what are the values for tau_ndvi and tau_gcc based on? is this reasonable?
-    init[[i]] <- list(x = rep(1,length(y)), tau_add=runif(1,0,1)/var(diff(y.samp),na.rm=TRUE),
+    init[[i]] <- list(x = rep(1,length(data$y)), tau_add=runif(1,0,1)/var(diff(y.samp),na.rm=TRUE),
                       tau_ndvi=10,tau_gcc=10)
   }
   
