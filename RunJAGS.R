@@ -7,7 +7,7 @@ RunJAGS <- function(data,n.iter,n.chains){
   model{
   #### Data Model: NDVI
   for(i in 1:n){
-  mu1[i] <-beta0 + beta1*x[i]
+  mu1[i] <- beta0 + beta1*x[i]
   y[i] ~ dnorm(mu1[i],tau_ndvi)
   }
   
@@ -21,7 +21,7 @@ RunJAGS <- function(data,n.iter,n.chains){
   #### Color is the expected new phenology stage given the previous stage and logistic 
   #### subtraction instead of addition in the discrete logistic eqn makes r negative (so logistic goes down).
   for(i in 2:n){
-  color[i] <- max(0,min(1,x[i-1] - r * x[i-1] * (1-x[i-1]) ))
+  color[i] <- max(0, min(1, x[i-1] - r * x[i-1] * (1-x[i-1]) ) )
   x[i]~dnorm(color[i],tau_add)
   }
   
@@ -43,9 +43,9 @@ RunJAGS <- function(data,n.iter,n.chains){
   nchain = n.chains
   init <- list()
   for(i in 1:nchain){
-    y.samp = sample(y,length(y),replace=TRUE)
+    y.samp = sample(data$y,length(data$y),replace=TRUE)
     ########## what are the values for tau_ndvi and tau_gcc based on? is this reasonable?
-    init[[i]] <- list(x = rep(1,length(y)), tau_add=runif(1,0,1)/var(diff(y.samp),na.rm=TRUE),
+    init[[i]] <- list(x = rep(1,length(data$y)), tau_add=runif(1,0,1)/var(diff(y.samp),na.rm=TRUE),
                       tau_ndvi=10,tau_gcc=10)
   }
   

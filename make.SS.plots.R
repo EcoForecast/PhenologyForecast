@@ -18,17 +18,12 @@ make.SS.plots <- function(jags.out.all.years.array,site_data){
     # [r  tau_add  tau_gcc	tau_ndvi	x]
     ci <- apply((jags.out.one.year[,5:369]),2,quantile,c(0.025,0.5,0.975))
     
-    # NDVI
+    # NDVI and GCC
     plot(1:365,ci[2,],type='l',ylim=c(0, 1),ylab="NDVI")
     ciEnvelope(1:365,ci[1,],ci[3,],col="lightBlue")
-    points(1:365,working_ndvi_yr,pch="+",cex=1.5)
+    points(1:365,working_ndvi_yr,pch="+",cex=0.8)
+    points(1:365,working_gcc_yr,pch="o",cex=0.5)
     lines(1:365,ci[2,],type='l',ylim=c(0, 1),ylab="NDVI")
-    
-    # GCC
-    plot(1:365,ci[2,],type='l',ylim=c(0, 1),ylab="GCC")
-    ciEnvelope(1:365,ci[1,],ci[3,],col="lightBlue")
-    points(1:365,working_gcc_yr,pch="+",cex=1.5)
-    lines(1:365,ci[2,],type='l',ylim=c(0, 1),ylab="GCC")
     
   }
   
