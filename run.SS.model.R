@@ -1,5 +1,6 @@
 run.SS.model <- function(site_num){
   
+  site_num = 1
   # source functions
   source("find.extreme.GCC.NDVI.R")
   source("RunJAGS.R")
@@ -50,7 +51,7 @@ run.SS.model <- function(site_num){
   jags.out.all.years.array = array(rep(NA,n.iter*n.chains*369*13),c(n.iter*n.chains,369,13)) 
   # counts for loop
   count = 0
-  for (YR in 2000:2012) {
+  for (YR in 2009:2009) {
     
     count = count + 1;
     # gets index of year
@@ -77,21 +78,21 @@ run.SS.model <- function(site_num){
     # run JAGS model 
     jags.out=RunJAGS(data,n.iter,n.chains)
     jags.out.matrix <- as.matrix(jags.out)
-    jags.out.all.years.array[,,count] <- jags.out.matrix
+#    jags.out.all.years.array[,,count] <- jags.out.matrix
 
-#     source("ciEnvelope.R")
-#     ci <- apply(( jags.out.matrix[,5:369]),2,quantile,c(0.025,0.5,0.975))
-#     plot(1:365,ci[2,],type='l',ylim=c(0, 1),ylab="NDVI")
-#     ciEnvelope(1:365,ci[1,],ci[3,],col="lightBlue")
-#     points(1:365,working_ndvi_yr,pch="+",cex=0.8)
-#     points(1:365,working_gcc_yr,pch="o",cex=0.5)
-#     lines(1:365,ci[2,],type='l',ylim=c(0, 1),ylab="NDVI")
+    source("ciEnvelope.R")
+    ci <- apply(( jags.out.matrix[,5:369]),2,quantile,c(0.025,0.5,0.975))
+    plot(1:365,ci[2,],type='l',ylim=c(0, 1),ylab="NDVI")
+    ciEnvelope(1:365,ci[1,],ci[3,],col="lightBlue")
+    points(1:365,working_ndvi_yr,pch="+",cex=0.8)
+    points(1:365,working_gcc_yr,pch="o",cex=0.5)
+    lines(1:365,ci[2,],type='l',ylim=c(0, 1),ylab="NDVI")
     
   }
   
   # Make filename and save jags output 
- file_name = paste('Jags.SS.out.site',as.character(site_num), 'RData',sep=".")
- save(jags.out.all.years.array, file = file_name)
+ #file_name = paste('Jags.SS.out.site',as.character(site_num), 'RData',sep=".")
+ #save(jags.out.all.years.array, file = file_name)
   
   # Make plots
 #  make.SS.plots(jags.out.all.years.array,site_data,site_num)
