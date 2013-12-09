@@ -20,7 +20,7 @@ RunJAGS <- function(data,n.iter,n.chains){
   #### Process Model
   #### Color is the expected new phenology stage given the previous stage and logistic 
   #### subtraction instead of addition in the discrete logistic eqn makes r negative (so logistic goes down).
-  for(i in 1:n){
+  for(i in 2:n){
   color[i] <- max(0, min(1, x[i-1] - r * x[i-1] * (1-x[i-1]) ) )
   x[i]~dnorm(color[i],tau_add)
   }
