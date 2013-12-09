@@ -12,7 +12,7 @@ RunJAGS <- function(data,n.iter,n.chains){
   }
   
   #### Data Model: GCC
-  for(i in 2:n){
+  for(i in 1:n){
   mu2[i] <- beta2 + beta3*x[i]
   z[i] ~ dnorm(mu2[i],tau_gcc)
   }
@@ -20,7 +20,7 @@ RunJAGS <- function(data,n.iter,n.chains){
   #### Process Model
   #### Color is the expected new phenology stage given the previous stage and logistic 
   #### subtraction instead of addition in the discrete logistic eqn makes r negative (so logistic goes down).
-  for(i in 2:n){
+  for(i in 1:n){
   color[i] <- max(0, min(1, x[i-1] - r * x[i-1] * (1-x[i-1]) ) )
   x[i]~dnorm(color[i],tau_add)
   }
@@ -56,13 +56,13 @@ RunJAGS <- function(data,n.iter,n.chains){
                            n.chains = nchain)
   ## burn-in
   jags.out   <- coda.samples (model = j.model,
-                              variable.names = c("tau_add","tau_ndvi","tau_gcc","r"),
+                              variable.names = c("tau_add","tau_ndvi","tau_gcc","r","mu1","mu2"),
                               n.iter = min(n.iter,2000))
   #plot(jags.out)
   
   ## run MCMC
   jags.out   <- coda.samples (model = j.model,
-                              variable.names = c("x","tau_add","tau_ndvi","tau_gcc","r"),
+                              variable.names = c("x","tau_add","tau_ndvi","tau_gcc","r","mu1","mu2"),
                               n.iter = n.iter)
   return(jags.out)
 }
