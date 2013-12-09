@@ -1,6 +1,6 @@
-make.SS.plots <- function(jags.out.all.years.array,site_data){
+make.SS.plots <- function(jags.out.all.years.array,site_data,site.number){
   source("ciEnvelope.R")
-  #pdf("output.pdf") #create output file
+  pdf("output.pdf") #create output file
   count = 0
   
   time=site_data$date
