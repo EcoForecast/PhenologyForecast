@@ -21,10 +21,15 @@ run.SS.model <- function(site_num){
   gcc_min = max_min_ndvi_gcc[4]
   
   # Set parameters for linear data model 
-  beta0 <- ndvi_min/(ndvi_max-ndvi_min)
-  beta1 <- 1/(ndvi_max-ndvi_min)
-  beta2 <- gcc_min/(gcc_max-gcc_min)
-  beta3 <- 1/(gcc_max-gcc_min)
+  # Ignoring linear data model because we CAN'T let the x or color values go 
+  # outside [0,1]. If they do (even because of uncertainty/error), then the
+  # logistic model will keep it at 0 or 1 (just one of those.  Currently, model
+  # gets stuck at 0).
+  
+#   beta0 <- ndvi_min/(ndvi_max-ndvi_min)
+#   beta1 <- 1/(ndvi_max-ndvi_min)
+#   beta2 <- gcc_min/(gcc_max-gcc_min)
+#   beta3 <- 1/(gcc_max-gcc_min)
   
   # Set Spring Dates 1-181 to NA
   DAYS_TOT = c(1:366,rep(c(rep(1:365,3),1:366),3),1:365) 
@@ -50,44 +55,58 @@ run.SS.model <- function(site_num){
   # hardcoded 369 because there are always 369 output parameters [r  tau_add	tau_gcc	tau_ndvi	x]
   jags.out.all.years.array = array(rep(NA,n.iter*n.chains*369*13),c(n.iter*n.chains,369,13)) 
   # counts for loop
+  
+  # Rescale data to be between 0 and 1 (using max and min NDVI, GCC values from 
+  # all years):
+  max_NDVI <- max(site_data$NDVI,na.rm=TRUE)
+  min_NDVI <- min(site_data$NDVI,na.rm=TRUE)
+  max_GCC <- max(site_data$GCC,na.rm=TRUE)
+  min_GCC <- min(site_data$GCC,na.rm=TRUE)
+  rescaled_NDVI <- (site_data$NDVI-min_NDVI)/(max_NDVI-min_NDVI)
+  rescaled_GCC <- (site_data$GCC-min_GCC)/(max_GCC-min_GCC)
+  
   count = 0
-  for (YR in 2010:2010) {
+  for (YR in 2009:2009) {
     
     count = count + 1;
     # gets index of year
-    II = which(time_year== YR)
-    working_ndvi_yr = site_data$NDVI[II]  # get ndvi just for ONE year
-    working_gcc_yr = site_data$GCC[II]    # get gcc just for ONE year
-  
-#     working_ndvi_yr = site_data$NDVI  # get ndvi just for ALL year
-#     working_gcc_yr = site_data$GCC # get gcc just for ALL year
-#     
-    # delete leap year day
+    II = which(time_year == YR)
+    rescaled_NDVI_one_year = rescaled_NDVI[II]  # get ndvi just for ONE year
+    rescaled_GCC_one_year = rescaled_GCC[II]    # get gcc just for ONE year
+
+    # delete leap days 
     if (length(II) == 366){
-      working_ndvi_yr = working_ndvi_yr[1:365]
-      working_gcc_yr = working_gcc_yr[1:365]
+      rescaled_NDVI_one_year = rescaled_NDVI_one_year[1:365]
+      rescaled_GCC_one_year = rescaled_GCC_one_year[1:365]
     }
   
-    y = working_ndvi_yr
-    z = working_gcc_yr
-#     data <- list(y = working_ndvi_yr,z = working_gcc_yr,n=length(y),x_ic=1,tau_ic=0.05,
-#                  a_ndvi=.59,r_ndvi=1.69,a_gcc=3.16,r_gcc=.316,a_add=1.41,r_add=.71,
-#                  beta0=beta0, beta1=beta1, beta2 = beta2, beta3 = beta3)
-     data <- list(z = working_gcc_yr,n=length(z),x_ic=1,tau_ic=0.05)
-    
+    # Make list "data" to be used as input for RunJAGS
+    data <- list(y = rescaled_NDVI_one_year,z = rescaled_GCC_one_year,
+                 n=length(rescaled_NDVI_one_year),x_ic=1,tau_ic=0.05,
+                 a_ndvi=.59,r_ndvi=1.69,a_gcc=3.16,r_gcc=.316,
+                 a_add=1.41,r_add=.71)
+     
     # run JAGS model 
     jags.out=RunJAGS(data,n.iter,n.chains)
     jags.out.matrix <- as.matrix(jags.out)
-    jags.out.all.years.array[,,count] <-jags.out.matrix
+#    jags.out.all.years.array[,,count] <- jags.out.matrix
+
+    source("ciEnvelope.R")
+    ci <- apply(( jags.out.matrix[,5:369]),2,quantile,c(0.025,0.5,0.975))
+    plot(1:365,ci[2,],type='l',ylim=c(0, 1),ylab="Rescaled NDVI, GCC")
+    ciEnvelope(1:365,ci[1,],ci[3,],col="lightBlue")
+    points(1:365,rescaled_NDVI_one_year,pch="+",cex=0.8)
+    points(1:365,rescaled_GCC_one_year,pch="o",cex=0.5)
+    lines(1:365,ci[2,],type='l',ylim=c(0, 1),ylab="Rescaled NDVI, GCC")
     
   }
   
   # Make filename and save jags output 
-  file_name = paste('Jags.SS.out.site',as.character(site_num), 'RData',sep=".")
-  save(jags.out.all.years.array, file = file_name)
+ #file_name = paste('Jags.SS.out.site',as.character(site_num), 'RData',sep=".")
+ #save(jags.out.all.years.array, file = file_name)
   
   # Make plots
-  make.SS.plots(jags.out.all.years.array,site_data)
+#  make.SS.plots(jags.out.all.years.array,site_data,site_num)
 
   
 }
