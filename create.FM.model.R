@@ -8,19 +8,28 @@ if (ne > 1) {
 }
 X.orig = X
 
-### This is where the prior distribution determined from the historical fit should go
-##### for now while historical fit is still in progress:
-mean_r=.05
-sd_r=.0005
+### read in output from State Space Model for X and r
+file_name = paste('Jags.SS.out.site',as.character(site_num), 'RData',sep=".")
+load(file_name)
+### read in phenology data
+X = as.matrix(jags.out.all.years.array[,5:369,])
+r = as.vector(jags.out.all.years.array[,1,])
+### read in r (growth rate parameter output)
 
+
+##### for now while historical fit is still in progress:
+## mean_r=.05
+## sd_r=.0005
+
+## Dummy data for testing
 ### Initial parameters (one for each ensemble member)
-r=rnorm(ne,mean_r,sd_r)
+## r=rnorm(ne,mean_r,sd_r)
 
 ## Super Simple Logistic Phenology Model
 ## X is phenology state
 ## r is growth rate parameter in logistic equation
 SSLPM <- function(X,r) { 
-  ne = length(X)  ## ne = number of ensemble members
+  ne = length(r)  ## ne = number of ensemble members
   # initialize new state
   Xnew = as.numeric(rep(NA,ne)) 
   # update state
