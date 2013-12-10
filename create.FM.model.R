@@ -1,7 +1,8 @@
-## source("SetEnsembleSize.r") ## this is if we write a function to make changing the ensemble size easier
+create.FM.model <- function(site_num){
+## source("SetEnsembleSize.r") ## if we write a function to make changing the ensemble size easy
 ne = 10 ## ensemble size
 
-### Initial State
+### Define Initial State of ensemble members
 if (ne > 1) {
   X = rbeta(ne,100,1) ## X is beta distributed very skewed to 1
 }
@@ -12,7 +13,7 @@ X.orig = X
 mean_r=.05
 sd_r=.0005
 
-### Initial parameters
+### Initial parameters (one for each ensemble member)
 r=rnorm(ne,mean_r,sd_r)
 
 ## Super Simple Logistic Phenology Model
@@ -30,13 +31,10 @@ SSLPM <- function(X,r) {
 }
 
 ## Create vector for time to current date
-## get current date and day of year (between 182 to 365)
 cur_date = Sys.Date()
 doy <- strftime(cur_date, format = "%j")
-## defines time vector as model driver
 time = 182:doy
 nt = length(time)
-
 
 #### generate initial ensemble forecast
 output = array(NA,c(nt,ne))
@@ -45,18 +43,18 @@ for(t in 1:nt){
   X=output[t,]
 }
 
-#plot this
-plot(time,output[,1],type="l")
-for(i in 2:nt){
-  lines(time,output[,i])
-}
-  
-## read in state space x output
-## read in historical data
-## GCC = 
-## NDVI = 
-## filter with GCC and NDVI
-## include if/else statement to constrain filter to use one data source if other data source has NA values
+#plot mean and CI of ensemble members time series
+source("ciEnvelope.R")
+ci = apply(output,1,quantile,c(0.025,0.5,0.975))
+plot(ci[2,],xlab="time",ylab="phenology",type='l')
+ciEnvelope(1:nt,ci[1,],ci[3,],col="light blue")
+lines(ci[2,])  
+
+
+
+#### HERE THERE BE DRAGONS ###
+
+## filter with GCC and NDVI (uses only one data source if other has all NA values)
 for (i = 1:length(GCC)) {
   if (!is.na(GCC(i))) && (!is.na(NDVI(i))) {
     NDVI_GCC_filter(i) = 0.5*GCC(i) + 0.5*NDVI(i)}
@@ -65,8 +63,8 @@ for (i = 1:length(GCC)) {
   else if (is.na(NDVI(i))) && (!is.na(NDVI(i))) {
     NDVI_GCC_filter(i) = NDVI(i) }
 }
-## Calculate model ensemble means for same periods
 
+## Calculate model ensemble means for same periods
 window = rep(1,each=48*1,length=nt)
 NDVI_GCC_m = t(apply(output[,,2],2,tapply,window,mean))
 NDVI_GCC_m.ci  = apply(NDVI_GCC_m,2,quantile,c(0.025,0.5,0.975))
