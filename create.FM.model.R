@@ -1,15 +1,15 @@
 particle.filter.FM <- function(site_num){
-    
+  source("SSLPM.r") ## Super Simple Logistic Model
+  source("ciEnvelope.R")
+  source("global_input_parameters.R")
+  source("update.r.R")  
+  
   ########################################
   #### dummy values for debugging ########
   ########################################
   site_num=1
-  ne=100
   
-  ### r parameter
-  inputs=list()
-  inputs$mean.r=c(0.05, 0.05, 0.05, 0.05, 0.05) # one parameter estimate for each site
-  inputs$sd.r=c(.0001, .0001, .0001, .0001, .0001)
+  ### See also ph.filter.sd below
   
   ### observation data (real thing should be cleaned, rescaled GCC and NDVI from 2013 only)
   obs=list()
@@ -20,27 +20,21 @@ particle.filter.FM <- function(site_num){
   #########################################
   #########################################
   
+  gcc.data <- read.csv( sprintf("gcc_data_site%i.csv",site_num) )
+  gcc.2013 = gcc.data[gcc.data$date]
+  
   ### read in output from State Space Model for X and r
   file_name = paste('Jags.SS.out.site',as.character(site_num), 'RData',sep=".")
   load(file_name)
-  ### read in phenology data
-  X = as.matrix(jags.out.all.years.array[,5,])
-  r = as.vector(jags.out.all.years.array[,1,])
-  ### read in r (growth rate parameter output)
+  X.from.SS = as.matrix(jags.out.all.years.array[,5,])
+  r.from.SS = as.matrix(jags.out.all.years.array[,1,])  
   
-    
-  source("SSLPM.r") ## Super Simple Logistic Model
-  source("ciEnvelope.R")
-  source("update.r.R")
+  #initial values for each ensemble member (average of all years of historical data)
+  X.orig=apply(X.from.SS,1,mean)
+  r.orig=apply(X.from.SS,1,mean)
   
-  ### Define Initial State
-  if (ne > 1) { ## ne is number of ensemble members
-    X = rbeta(ne,100,1) ## X is beta distributed very skewed to 1
-  }
-  X.orig = X
-  
-  ### Initial parameters (one for each ensemble member)
-  r=rnorm(ne,inputs$mean.r[site_num],inputs$sd.r[site_num])
+  #take ensemble size from the size of the SS fit ensemble
+  ne=length(X.orig)
   
   ## Create vector for time to current date
   cur_date = Sys.Date()
@@ -75,6 +69,7 @@ particle.filter.FM <- function(site_num){
   hist.r=list()  ## since we resample parameters, create a record of what values were used each step
   hist.r[[1]] = r ## initial parameter conditions
   X = X.orig  ## reset state to the initial values, not the final values from the previous ensemble
+  r = r.orig
   output = array(NA,c(nt,ne,2)) ## initialize output
   
   ###### here's the actual forecast loop
