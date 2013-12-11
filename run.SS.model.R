@@ -70,7 +70,7 @@ run.SS.model <- function(site_num){
   rescaled_GCC <- (site_data$GCC-min_GCC)/(max_GCC-min_GCC)
   
   count = 0
-  for (YR in 2009:2009) {#2000:2012) {
+  for (YR in 2000:2012) {
     
     cat(sprintf("Running state-space model for site %i, year %i\n\n",site_num,YR))
     count = count + 1;
