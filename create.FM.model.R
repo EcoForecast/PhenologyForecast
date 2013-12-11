@@ -1,5 +1,5 @@
-particle.filter.FM <- function(site_num,ne,inputs,obs){
-  
+particle.filter.FM <- function(site_num){
+    
   ########################################
   #### dummy values for debugging ########
   ########################################
@@ -24,10 +24,11 @@ particle.filter.FM <- function(site_num,ne,inputs,obs){
   file_name = paste('Jags.SS.out.site',as.character(site_num), 'RData',sep=".")
   load(file_name)
   ### read in phenology data
-  X = as.matrix(jags.out.all.years.array[,5:369,])
+  X = as.matrix(jags.out.all.years.array[,5,])
   r = as.vector(jags.out.all.years.array[,1,])
   ### read in r (growth rate parameter output)
   
+    
   source("SSLPM.r") ## Super Simple Logistic Model
   source("ciEnvelope.R")
   source("update.r.R")
