@@ -7,14 +7,12 @@ RunJAGS <- function(data,n.iter,n.chains){
   model{
   #### Data Model: NDVI
   for(i in 1:n){
-  mu1[i] <- beta0 + beta1*x[i]
-  y[i] ~ dnorm(mu1[i],tau_ndvi)
+  y[i] ~ dnorm(x[i],tau_ndvi)
   }
   
   #### Data Model: GCC
   for(i in 1:n){
-  mu2[i] <- beta2 + beta3*x[i]
-  z[i] ~ dnorm(mu2[i],tau_gcc)
+  z[i] ~ dnorm(x[i],tau_gcc)
   }
   
   #### Process Model
@@ -32,10 +30,6 @@ RunJAGS <- function(data,n.iter,n.chains){
   tau_add ~ dgamma(a_add,r_add)
   # r ~ dnorm(0.5,110)
   r ~ dnorm(0.5,1)
-  beta0 ~ dnorm(0,0.0001)
-  beta1 ~ dnorm(0,0.0001)
-  beta2 ~ dnorm(0,0.0001)
-  beta3 ~ dnorm(0,0.0001)
 
   }"
     
@@ -56,13 +50,13 @@ RunJAGS <- function(data,n.iter,n.chains){
                            n.chains = nchain)
   ## burn-in
   jags.out   <- coda.samples (model = j.model,
-                              variable.names = c("tau_add","tau_ndvi","tau_gcc","r","mu1","mu2"),
+                              variable.names = c("tau_add","tau_ndvi","tau_gcc","r"),
                               n.iter = min(n.iter,2000))
   #plot(jags.out)
   
   ## run MCMC
   jags.out   <- coda.samples (model = j.model,
-                              variable.names = c("x","tau_add","tau_ndvi","tau_gcc","r","mu1","mu2"),
+                              variable.names = c("x","tau_add","tau_ndvi","tau_gcc","r"),
                               n.iter = n.iter)
   return(jags.out)
 }
