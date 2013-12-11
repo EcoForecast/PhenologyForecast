@@ -56,8 +56,8 @@ run.SS.model <- function(site_num){
   # Stores output from each year
   # hardcode 13 because there is ALWAYS 13 years.
   # hardcoded 369 because there are always 369 output parameters [r  tau_add	tau_gcc	tau_ndvi	x]
-  jags.out.all.years.array = array(rep(NA,n.iter*n.chains*ncol(jags.out.matrix)*13),
-                                       c(n.iter*n.chains,ncol(jags.out.matrix),13)) #369
+  jags.out.all.years.array = array(rep(NA,n.iter*n.chains*188*13),
+                                       c(n.iter*n.chains,188,13)) #369
   # counts for loop
   
   # Rescale data to be between 0 and 1 (using max and min NDVI, GCC values from 
@@ -80,16 +80,16 @@ run.SS.model <- function(site_num){
     rescaled_GCC_one_year = rescaled_GCC[II]    # get gcc just for ONE year
 
     # delete leap days 
-    if (length(II) == 366){
-      rescaled_NDVI_one_year = rescaled_NDVI_one_year[1:365] # [1:365]
-      rescaled_GCC_one_year = rescaled_GCC_one_year[1:365] # [1:365]
+    if (length(II) == 185){
+      rescaled_NDVI_one_year = rescaled_NDVI_one_year[1:184] # [1:365]
+      rescaled_GCC_one_year = rescaled_GCC_one_year[1:184] # [1:365]
     }
   
     # Make list "data" to be used as input for RunJAGS
     data <- list(y = rescaled_NDVI_one_year,z = rescaled_GCC_one_year,
-                 n=length(rescaled_NDVI_one_year),x_ic=.9,tau_ic=0.05,
-                 a_ndvi=.59,r_ndvi=1.69,a_gcc=3.16,r_gcc=.316,
-                 a_add=1.41,r_add=.71) #, x_ic=1, a_add=1.41,r_add=.71 a_gcc=3.16,r_gcc=.316
+                 n=length(rescaled_NDVI_one_year),x_ic=1,tau_ic=0.05,
+                 a_ndvi=3.16,r_ndvi=.316,a_gcc=3.16,r_gcc=.316, #a_ndvi=.59,r_ndvi=1.69
+                 a_add=1.41,r_add=.71)
      
     # run JAGS model 
     jags.out=RunJAGS(data,n.iter,n.chains)
@@ -97,7 +97,7 @@ run.SS.model <- function(site_num){
     jags.out.all.years.array[,,count] <- jags.out.matrix
 
 #     source("ciEnvelope.R")
-#     ci <- apply(( jags.out.matrix[,5:ncol(jags.out.matrix)]),2,quantile,c(0.025,0.5,0.975)) #[,5:369]
+#     ci <- apply(( jags.out.matrix[,5:188]),2,quantile,c(0.025,0.5,0.975)) #[,5:369]
 #     plot(182:365,ci[2,],type='l',ylim=c(0, 1),ylab="Rescaled NDVI, GCC",xlab="DOY")
 #     ciEnvelope(182:365,ci[1,],ci[3,],col="lightBlue")
 #     points(182:365,rescaled_NDVI_one_year,pch="+",cex=0.8)
