@@ -127,12 +127,15 @@ for(t in 1:nt){
 NDVI_GCC_filter.pr = t(apply(output[,,2],2,tapply,window,mean))
 NDVI_GCC_filter.ci  = apply(NDVI_GCC_filter.pr,2,quantile,c(0.025,0.5,0.975))
 
-plot(Mtime[Msel],NDVI_GCC_filter.ci[2,],ylim=range(c(range(LAIm.ci),range(NDVI_GCC_filter,na.rm=TRUE))),
+plot(Mtime[Msel],NDVI_GCC_filter.ci[2,],ylim=range(c(range(NDVI_GCC_filter.ci),range(NDVI_GCC_filter,na.rm=TRUE))),
      type='n',ylab="NDVI_GCC",xlab="Time")
 ciEnvelope(Mtime[Msel],NDVI_GCC_m.ci[1,],NDVI_GCC_m.ci[3,],col=col.alpha("lightGrey",0.5))
 ciEnvelope(Mtime[Msel],NDVI_GCC_filter.ci[1,],NDVI_GCC_filter.ci[3,],col=col.alpha("lightGreen",0.5))
 points(Mtime,NDVI_GCC_filter)    
 for(i in 1:length(NDVI_GCC_filter)){
-  lines(rep(Mtime[i],2),NDVI_GCC_filter[i]+c(-1,1)*LAIr.sd[i])
+  lines(rep(Mtime[i],2),NDVI_GCC_filter[i]+c(-1,1)*NDVI_GCC_filter.sd)
 }
 
+### save output from forecast model
+file_name = paste('ForecastModel.out.site',as.character(site_num), 'RData',sep=".")
+save(NDVI_GCC_filter.pr, file = file_name)
