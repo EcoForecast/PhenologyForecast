@@ -13,15 +13,38 @@ particle.filter.FM <- function(site_num){
   
   ### observation data (real thing should be cleaned, rescaled GCC and NDVI from 2013 only)
   obs=list()
-  obs$GCC= c(rep(NA,182),cumsum(c(1,rnorm(344-182,-.005,.00001))))
+  #obs$GCC= c(rep(NA,182),cumsum(c(1,rnorm(344-182,-.005,.00001))))
   obs$NDVI= c(rep(NA,182),cumsum(c(1,rnorm(344-182,-.005,.00002))))
   obs$NDVI[210:240]=NA #
-  obs$GCC[230:260]=NA #
+  #obs$GCC[230:260]=NA #
   #########################################
   #########################################
   
+  ## set up model time frame
+  model.start.DOY=global_input_parameters$model.start.DOY
+  cur_date = Sys.Date()
+  doy <- strftime(cur_date, format = "%j")
+  current.year = as.numeric(format(Sys.Date(), "%Y"))
+  time = model.start.DOY:doy
+  nt = length(time)
+  
+  #load GCC data
   gcc.data <- read.csv( sprintf("gcc_data_site%i.csv",site_num) )
-  gcc.2013 = gcc.data[gcc.data$date]
+  # Current year only
+  years=as.numeric(strftime(gcc.data$date,"%Y"))
+  current.year.gcc.data=subset(gcc.data,years == current.year)
+  # fall only
+  days=as.numeric(strftime(current.year.gcc.data$date,"%j"))
+  fall.cy.gcc.data = subset(current.year.gcc.data,days >= model.start.DOY)
+  
+  #load NDVI data
+  ndvi.data <- read.csv( sprintf("ndvi_data_site%i.csv",site_num) )
+  # Current year only
+  years=as.numeric(strftime(ndvi.data$date,"%Y"))
+  current.year.ndvi.data=subset(ndvi.data,years == current.year)
+  # fall only
+  days=as.numeric(strftime(current.year.ndvi.data$date,"%j"))
+  fall.cy.ndvi.data = subset(current.year.ndvi.data,days >= model.start.DOY)
   
   ### read in output from State Space Model for X and r
   file_name = paste('Jags.SS.out.site',as.character(site_num), 'RData',sep=".")
@@ -36,15 +59,9 @@ particle.filter.FM <- function(site_num){
   #take ensemble size from the size of the SS fit ensemble
   ne=length(X.orig)
   
-  ## Create vector for time to current date
-  cur_date = Sys.Date()
-  doy <- strftime(cur_date, format = "%j")
-  time = 182:doy
-  nt = length(time)
-  
   ## Create a filter with GCC and NDVI equally weighted (uses only one data source if the other is NA)
-  GCC = obs$GCC
-  NDVI = obs$NDVI
+  GCC=fall.cy.gcc.data[,4]
+  #NDVI=fall.cy.ndvi.data[,2?]
   length = length(GCC)
   ph.filter=array(NA,(length))
   for(i in 1:length) {
