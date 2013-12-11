@@ -1,6 +1,6 @@
 get.site.data <- function(site.number) {
   # The function get.site.data takes an integer input corresponding to the
-  # sites listed in the file phen_sites.csv and creates/updates the GCC and
+  # sites listed in the file site_metadata.csv and creates/updates the GCC and
   # MODIS data files for that site. 
   
   gcc_filename <- sprintf("gcc_data_site%i,csv",site.number)
@@ -10,24 +10,20 @@ get.site.data <- function(site.number) {
   # already exist):
   some.data.downloaded <- file.exists(gcc_filename) &&  file.exists(ndvi_filename) # some.data.downloaded is TRUE/FALSE
   
-  # If none of the data for that site has been downloaded, then download all
+  # If there isn't at least SOME GCC and MODIS data, then download all
   # of the gcc and MODIS data from 2000-present, and process it. Save the 
   # data in the file SOMETHING2.CSV:
   if(!some.data.downloaded){
-    # Read in the info on where to get phenocam and MODIS data:
-    site.metadata <- read.table("site_metadata.csv",header = TRUE, 
-                                sep=",",stringsAsFactors=FALSE) # site name, phenocam url, lat, lon
         
-    # Download phenocam data:
-    phenocam.url <- site.metadata$phenocam_url[site.number]
-    sys_command = sprintf("wget -O phenocam_data_site%i.csv %s", site.number, phenocam.url)
-    system(sys_command)
-    
-    # Process phenocam data:
-    
-    # Save gcc data:
-    
-    # Download MODIS data:
+    # Download phenocam data and save (creates file named "phenocam_data_siteX.csv", 
+    # where X is the site number):
+    download.phenocam.data(site.number)
+        
+    # Process phenocam data into gcc data:
+    create.gcc.data(site.number) # creates file gcc_data_siteX.csv, where X = site.number
+        
+    # Download ALL MODIS data:
+    download.all.modis.data(site.number)
     
     # Process MODIS data:
     
@@ -35,7 +31,12 @@ get.site.data <- function(site.number) {
     
   }
   else{ #ie if some.data.downloaded is TRUE, just need to update:
-    SOME CODE
+    # Probably simplest to just re-download all of the gcc data:
+    
+    # Just need to download the last year of MODIS data (SUPER SLOW!!), and then add
+    # it with the existing data:
+    
+    
   }
   
 }
