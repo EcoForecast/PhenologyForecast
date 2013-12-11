@@ -9,7 +9,7 @@ make.SS.plots <- function(jags.out.all.years.array,time,
   pdf(plot_file_name)
   
   count = 0
-  for(YR in 2009:2009){#2000:2012){
+  for(YR in 2000:2012){
     
     count = count+1
     jags.out.one.year = jags.out.all.years.array[,,count]
@@ -20,17 +20,17 @@ make.SS.plots <- function(jags.out.all.years.array,time,
     
     # delete leap days 
     if (length(II) == 185){
-      rescaled_NDVI_one_year = rescaled_NDVI_one_year[182:365]
-      rescaled_GCC_one_year = rescaled_GCC_one_year[182:365]
+      rescaled_NDVI_one_year = rescaled_NDVI_one_year[1:184]
+      rescaled_GCC_one_year = rescaled_GCC_one_year[1:184]
     }
     
     
     
     # [r  tau_add  tau_gcc	tau_ndvi	x]
-    ci <- apply((jags.out.one.year[,5:ncol(jags.out.matrix)]),2,quantile,c(0.025,0.5,0.975))
+    ci <- apply((jags.out.one.year[,5:188]),2,quantile,c(0.025,0.5,0.975))
     
     # NDVI and GCC
-    plot(182:365,ci[2,],type='l',ylim=c(0, 1),ylab="Rescaled NDVI, GCC")
+    plot(182:365,ci[2,],type='l',ylim=c(0, 1),ylab="Rescaled NDVI, GCC",xlab="DOY")
     ciEnvelope(182:365,ci[1,],ci[3,],col="lightBlue")
 #    if(!is.null(dim(rescaled_NDVI_one_year))){ # R is stupid with NAs...
       points(182:365,rescaled_NDVI_one_year,pch="+",cex=0.8)
