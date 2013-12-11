@@ -1,20 +1,42 @@
 get.site.data <- function(site.number) {
   # The function get.site.data takes an integer input corresponding to the
-  # site numbers in the file SOMETHING1.CSV and creates/updates the GCC and
-  # MODIS data file stored in SOMETHING2.CSV 
+  # sites listed in the file site_metadata.csv and creates/updates the GCC and
+  # MODIS data files for that site. 
   
-  # Check to see if some data has already been downloaded (i.e. if the file
-  # SOMETHING2.CSV exists):
-  some.data.downloaded <- SOME CODE # some.data.downloaded is TRUE/FALSE
+  gcc_filename <- sprintf("gcc_data_site%i.csv",site.number)
+  ndvi_filename <- sprintf("gcc_data_site%i.csv",site.number)
   
-  # If none of the data for that site has been downloaded, then download all
+  # Check to see if some data has already been downloaded (i.e. if the files
+  # already exist):
+  some.data.downloaded <- file.exists(gcc_filename) &&  file.exists(ndvi_filename) # some.data.downloaded is TRUE/FALSE
+  
+  # If there isn't at least SOME GCC and MODIS data, then download all
   # of the gcc and MODIS data from 2000-present, and process it. Save the 
   # data in the file SOMETHING2.CSV:
   if(!some.data.downloaded){
-    SOME CODE
+        
+    # Download phenocam data and save (creates file named "phenocam_data_siteX.csv", 
+    # where X is the site number):
+    download.phenocam.data(site.number)
+        
+    # Process phenocam data into gcc data:
+    create.gcc.data(site.number) # creates file gcc_data_siteX.csv, where X = site.number
+        
+    # Download ALL MODIS data:
+    download.all.modis.data(site.number)
+    
+    # Process MODIS data:
+    
+    # Save NDVI data:
+    
   }
   else{ #ie if some.data.downloaded is TRUE, just need to update:
-    SOME CODE
+    # Probably simplest to just re-download all of the gcc data:
+    
+    # Just need to download the last year of MODIS data (SUPER SLOW!!), and then add
+    # it with the existing data:
+    
+    
   }
   
 }
