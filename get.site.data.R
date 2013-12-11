@@ -3,8 +3,8 @@ get.site.data <- function(site.number) {
   # sites listed in the file site_metadata.csv and creates/updates the GCC and
   # MODIS data files for that site. 
   
-  gcc_filename <- sprintf("gcc_data_site%i,csv",site.number)
-  ndvi_filename <- sprintf("gcc_data_site%i,csv",site.number)
+  gcc_filename <- sprintf("gcc_data_site%i.csv",site.number)
+  ndvi_filename <- sprintf("gcc_data_site%i.csv",site.number)
   
   # Check to see if some data has already been downloaded (i.e. if the files
   # already exist):
