@@ -41,9 +41,10 @@ get.site.data <- function(site.number) {
     
     # Just need to download the last year of MODIS data (SUPER SLOW!!), and then add
     # it with the existing data:
+    unlink("Subset Download*.csv")
     download.new.modis.data(site.number)
     update.ndvi.data(site.number)
-    
+  
   }
   
 }
