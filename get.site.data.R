@@ -22,16 +22,22 @@ get.site.data <- function(site.number) {
     # Process phenocam data into gcc data:
     create.gcc.data(site.number) # creates file gcc_data_siteX.csv, where X = site.number
         
+    # Before we download the MODIS data, we'll remove the file that we'll 
+    # get a filename from:
+    unlink("Subset Download*.csv")
+    
     # Download ALL MODIS data:
     download.all.modis.data(site.number)
     
-    # Process MODIS data:
-    
-    # Save NDVI data:
-    
+    # Process MODIS data into NDVI data:
+    create.ndvi.data(site.number)    
   }
   else{ #ie if some.data.downloaded is TRUE, just need to update:
+
     # Probably simplest to just re-download all of the gcc data:
+    download.phenocam.data(site.number)
+    create.gcc.data(site.number) # creates file gcc_data_siteX.csv, where X = site.number
+    
     
     # Just need to download the last year of MODIS data (SUPER SLOW!!), and then add
     # it with the existing data:
