@@ -17,9 +17,11 @@ get.site.data <- function(site.number) {
         
     # Download phenocam data and save (creates file named "phenocam_data_siteX.csv", 
     # where X is the site number):
+    source("download.phenocam.data.R")
     download.phenocam.data(site.number)
         
     # Process phenocam data into gcc data:
+    source("create.gcc.data.R")
     create.gcc.data(site.number) # creates file gcc_data_siteX.csv, where X = site.number
         
     # Before we download the MODIS data, we'll remove the file that we'll 
@@ -27,9 +29,11 @@ get.site.data <- function(site.number) {
     unlink("Subset Download*.csv")
     
     # Download ALL MODIS data:
+    source("download.all.modis.data.R")
     download.all.modis.data(site.number)
     
     # Process MODIS data into NDVI data:
+    source("create.ndvi.data.R")
     create.ndvi.data(site.number)    
   }
   else{ #ie if some.data.downloaded is TRUE, just need to update:
