@@ -14,7 +14,7 @@ run.SS.model <- function(site_num){
 
   # find max/min of ndvi and gcc over all years of record except 2013
   # outputs (ndvi_max,ndvi_min,gcc_max,gcc_min)
-  max_min_ndvi_gcc = find.extreme.GCC.NDVI(site_data)  
+  max_min_ndvi_gcc = find.extreme.GCC.NDVI(site_data, 2000, 2012, use.interannual.means=TRUE)  
   ndvi_max = max_min_ndvi_gcc[1]
   ndvi_min = max_min_ndvi_gcc[2]
   gcc_max = max_min_ndvi_gcc[3]
