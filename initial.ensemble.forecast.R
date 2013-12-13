@@ -29,11 +29,11 @@ initial.ensemble.FM <- function(site_num){
   r.orig=apply(r.from.SS,1,mean,na.rm=TRUE)
   
   #take ensemble size from the size of the SS fit ensemble
-  ne=length(X.orig)
+  ne = 1000 # length(X.orig)
   
   # Pulls from a distrubtion... need to work on this
-  X.orig.dist = rnorm(ne,X.orig,sd(X.from.SS,na.rm=TRUE)) 
-  r.orig.dist = rnorm(ne,r.orig,sd(r.from.SS,na.rm=TRUE))
+  r.orig.dist = sample(r.orig,size=ne)
+  X.orig.dist = sample(X.orig,size=ne)
   
   ## Create vector for time to current date
 #   cur_date = Sys.Date()
@@ -46,6 +46,7 @@ initial.ensemble.FM <- function(site_num){
   output = array(NA,c(nt,ne,2))
   X = X.orig.dist
   r = r.orig.dist
+  
   for(t in 1:nt){
     output[t,,]=as.matrix(SSLPM(X,r))
     X=output[t,,1]
