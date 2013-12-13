@@ -4,7 +4,7 @@ get.site.data <- function(site.number) {
   # MODIS data files for that site. 
   
   gcc_filename <- sprintf("gcc_data_site%i.csv",site.number)
-  ndvi_filename <- sprintf("gcc_data_site%i.csv",site.number)
+  ndvi_filename <- sprintf("ndvi_data_site%i.csv",site.number)
   
   # Check to see if some data has already been downloaded (i.e. if the files
   # already exist):
@@ -39,16 +39,20 @@ get.site.data <- function(site.number) {
   else{ #ie if some.data.downloaded is TRUE, just need to update:
 
     # Probably simplest to just re-download all of the gcc data:
+    source("download.phenocam.data.R")
     download.phenocam.data(site.number)
+    source("create.gcc.data.R")
     create.gcc.data(site.number) # creates file gcc_data_siteX.csv, where X = site.number
     
     
     # Just need to download the last year of MODIS data (SUPER SLOW!!), and then add
     # it with the existing data:
     unlink("Subset Download*.csv")
+    source("download.new.modis.data.R")
     download.new.modis.data(site.number)
+ 
+    source("update.ndvi.data.R")
     update.ndvi.data(site.number)
-  
   }
   
 }
