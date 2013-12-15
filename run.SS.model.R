@@ -67,11 +67,20 @@ run.SS.model <- function(site_num){
     rescaled_NDVI_one_year = rescaled_NDVI[II]  # get ndvi just for ONE year
     rescaled_GCC_one_year = rescaled_GCC[II]    # get gcc just for ONE year
     
-    # Make list "data" to be used as input for RunJAGS
+    # Make list of "data" to be used as input for RunJAGS
+    x_ic <- global_input_parameters$x_ic
+    tau_ic <- global_input_parameters$tau_ic
+    a_ndvi <- global_input_parameters$a_ndvi
+    r_ndvi <- global_input_parameters$r_ndvi
+    a_gcc <- global_input_parameters$a_gcc
+    r_gcc <- global_input_parameters$r_gcc
+    a_add <- global_input_parameters$a_add
+    r_add <- global_input_parameters$r_add
+    
     data <- list(y = rescaled_NDVI_one_year,z = rescaled_GCC_one_year,
-                 n=length(rescaled_NDVI_one_year),x_ic=1,tau_ic=0.05,
-                 a_ndvi=3.16,r_ndvi=.316,a_gcc=3.16,r_gcc=.316,
-                 a_add=1.41,r_add=.71)
+                 n=length(rescaled_NDVI_one_year),x_ic=x_ic, tau_ic=tau_ic,
+                 a_ndvi=a_ndvi, r_ndvi=r_ndvi, a_gcc=a_gcc, r_gcc=r_gcc,
+                 a_add=a_add, r_add=r_add)
     
     # run JAGS model 
     jags.out=RunJAGS(data,n.iter,n.chains)
