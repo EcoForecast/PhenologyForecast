@@ -27,7 +27,6 @@ update.ndvi.data <- function(site.number){
   band_2_data = rep(NA,length(id_num))
   DOY_data = rep(NA,length(id_num))
   date_format = as.Date(rep(NA,length(id_num)))
-  site_ID = rep(i,length(id_num)) # Just for ease, assign ID number to each site (1:5, rows of phen_sites.csv)
   
   for (p in 1:length(id_num) ) { # for loop over each day.  
     
@@ -59,6 +58,10 @@ update.ndvi.data <- function(site.number){
   # Also delete any dates that are NA (why do these exist??)
   MODIS_DATA_ST <- as.data.frame(subset.data.frame(MODIS_DATA_ST,!leap_days[,1]))
   
+  # Finally, remove any dates from the future (there are some of these...)
+  MODIS_DATA_ST <- as.data.frame(subset.data.frame(MODIS_DATA_ST,
+                                                   MODIS_DATA_ST$date < (Sys.Date()+1)))
+  
   
   # Create a vector of possible data observation dates
   source("global_input_parameters.R")
@@ -76,7 +79,7 @@ update.ndvi.data <- function(site.number){
   
   # Load the existing NDVI data:
   old.ndvi.data <- read.csv(sprintf("ndvi_data_site%i.csv",site.number))
-
+  
   # Get the last date in the old data which is not NA:
   not.nas <- !is.na(old.ndvi.data$ndvi)
   counter <- 1:length(not.nas)
@@ -89,16 +92,16 @@ update.ndvi.data <- function(site.number){
   new.data.index <- counter[matches.date] # should just be a single integer
   
   # Make a data frame of the new data:
-  new.ndvi.data <- data.frame(date = daily.dates[(new.data.index+1):length(daily.data)],
+  new.ndvi.data <- data.frame(date = daily.dates[(new.data.index+1):length(daily.dates)],
                               ndvi = ndvi.new[(new.data.index+1):length(ndvi.new)])
   
   # Stick the old date (through last.data.date) together with the new data (after
   # last.data.date):
-  combined.data = rbind(old.ndvi.data[1:last.data.index,],new.ndvi.data)
+  date.combined = c( as.Date(old.ndvi.data$date[1:last.data.index]), new.ndvi.data$date )
+  ndvi.combined = c( old.ndvi.data[1:last.data.index,2], new.ndvi.data$ndvi )
+  combined.data = data.frame(date = date.combined, ndvi = ndvi.combined)
   
   # Save NDVI data:
   write.csv(combined.data, file = sprintf("ndvi_data_site%i.csv",site.number),row.names=FALSE)
-  
-  
   
 }
