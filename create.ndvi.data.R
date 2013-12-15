@@ -27,7 +27,6 @@ create.ndvi.data <- function(site.number){
   band_2_data = rep(NA,length(id_num))
   DOY_data = rep(NA,length(id_num))
   date_format = as.Date(rep(NA,length(id_num)))
-  site_ID = rep(i,length(id_num)) # Just for ease, assign ID number to each site (1:5, rows of phen_sites.csv)
   
   for (p in 1:length(id_num) ) { # for loop over each day.  
     
@@ -58,6 +57,10 @@ create.ndvi.data <- function(site.number){
   
   # Also delete any dates that are NA (why do these exist??)
   MODIS_DATA_ST <- as.data.frame(subset.data.frame(MODIS_DATA_ST,!leap_days[,1]))
+  
+  # Finally, remove any dates from the future (there are some of these...)
+  MODIS_DATA_ST <- as.data.frame(subset.data.frame(MODIS_DATA_ST,
+                                                   MODIS_DATA_ST$date < (Sys.Date()+1)))
   
   
   # Create a vector of possible data observation dates
