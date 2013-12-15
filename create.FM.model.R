@@ -54,7 +54,7 @@ particle.filter.FM <- function(site_num){
   
   #initial values for each ensemble member (average of all years of historical data)
   X.orig=apply(X.from.SS,1,mean)
-  r.orig=apply(X.from.SS,1,mean)
+  r.orig=apply(r.from.SS,1,mean)
   
   #take ensemble size from the size of the SS fit ensemble
   ne=length(X.orig)
