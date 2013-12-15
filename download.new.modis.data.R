@@ -51,11 +51,11 @@ download.new.modis.data <- function(site.number) {
     site.lat <- site.metadata$lat[site.number]
     site.lon <- site.metadata$lon[site.number]
     
-    first.year <- format(last.data.date, "%Y")
-    last.year <-  format(Sys.Date(), "%Y")
+    first.year <- as.numeric(format(last.data.date, "%Y"))
+    last.year <-  as.numeric(format(Sys.Date(), "%Y"))
     
     # Download MODIS data
-    print(sprintf("Downloading MODIS data for site %i.\n",site.number))
+    print(sprintf("Downloading MODIS data for site %i.",site.number))
     MODISSubsets(data.frame(lat = site.lat,
                             long = site.lon,
                             start.date = first.year,

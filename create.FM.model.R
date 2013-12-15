@@ -113,17 +113,28 @@ particle.filter.FM <- function(site_num){
       r = update.r(r,index)    
     }
     hist.r[[sample+1]] = r
+    
     #}
   }
   ##### end of forecast loop
+  
+  ## save X and r output to use in updating forecast model
+  X.output_file_name = paste('ForecastModel.X.out.site',as.character(site_num), 'RData',sep=".")
+  save(X,file = X.output_file_name)
+  r.output_file_name = paste('ForecastModel.r.out.site',as.character(site_num), 'RData',sep=".")
+  save(r,file = output_file_name)
+  
+  ### save output 
+  output_file_name = paste('ForecastModel.X.out.site',as.character(site_num), 'RData',sep=".")
+  save(output,file = output_file_name)
   
   ## Extract and summarize ph.filter
   ph.filter.pr = t(output[,,1])
   ph.filter.ci  = apply(ph.filter.pr,2,quantile,c(0.025,0.5,0.975))
   
   #### saves output so that it can appended to as the forecast iterates
-  output_file_name = paste('ForecastModel.out.site',as.character(site_num), 'RData',sep=".")
-  save(ph.filter.pr,file = output_file_name)
+  ph.output_file_name = paste('ForecastModel.out.site',as.character(site_num), 'RData',sep=".")
+  save(ph.filter.pr,file = ph.output_file_name)
   
   #### save plot produced to PDF
   ## name of output file
@@ -141,5 +152,9 @@ particle.filter.FM <- function(site_num){
   
   ## name of initial ensemble forecast file
 print(sprintf('The particle filter forecast for site No %.f is saved as %s',site_num,file_name))
+  
+  ### need nt and sample for particle filter update
+  inputs.for.updating.forecast <- c(nt,sample)
+  return(inputs.for.updating.forecast)
   
 }  
