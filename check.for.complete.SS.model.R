@@ -1,5 +1,5 @@
 ### # Step 2 of Operations Script: check to see if state space model has already been run
-check.for.SS.model <- function(site) {
+check.for.complete.SS.model <- function(site) {
 
 ## if SS model already ran, it will have produced output for the site being run with the following file name
 ## site is a number 
