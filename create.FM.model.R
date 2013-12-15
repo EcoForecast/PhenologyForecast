@@ -54,7 +54,7 @@ particle.filter.FM <- function(site_num){
   
   #initial values for each ensemble member (average of all years of historical data)
   X.orig=apply(X.from.SS,1,mean)
-  r.orig=apply(X.from.SS,1,mean)
+  r.orig=apply(r.from.SS,1,mean)
   
   #take ensemble size from the size of the SS fit ensemble
   ne=length(X.orig)
@@ -121,9 +121,25 @@ particle.filter.FM <- function(site_num){
   ph.filter.pr = t(output[,,1])
   ph.filter.ci  = apply(ph.filter.pr,2,quantile,c(0.025,0.5,0.975))
   
+  #### saves output so that it can appended to as the forecast iterates
+  output_file_name = paste('ForecastModel.out.site',as.character(site_num), 'RData',sep=".")
+  save(ph.filter.pr,file = output_file_name)
+  
+  #### save plot produced to PDF
+  ## name of output file
+  file_name = paste('ParticleFilterForecast',as.character(site_num), 'pdf',sep=".")
+  ## saves as PDF
+  pdf(file=file_name)
+  
   ##plot filter
   plot(time,ph.filter.ci[2,],type='n',ylab="NDVI_GCC",xlab="Time")
   ciEnvelope(time,ph.filter.ci[1,],ph.filter.ci[3,],col="light grey")
   points(time,ph.filter)    
+  
+  ## ends plot output to PDF
+  dev.off()
+  
+  ## name of initial ensemble forecast file
+print(sprintf('The particle filter forecast for site No %.f is saved as %s',site_num,file_name))
   
 }  
