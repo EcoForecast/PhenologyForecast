@@ -28,31 +28,29 @@ RunJAGS <- function(data,n.iter,n.chains){
   tau_ndvi ~ dgamma(a_ndvi,r_ndvi)
   tau_gcc ~ dgamma(a_gcc,r_gcc)
   tau_add ~ dgamma(a_add,r_add)
-  # r ~ dnorm(0.5,110)
   r ~ dnorm(0.5,1)
 
   }"
     
   ## JAGS initial conditions
-  nchain = n.chains
   init <- list()
-  for(i in 1:nchain){
+  for(i in 1:n.chains){
     y.samp = sample(data$y,length(data$y),replace=TRUE)
     ########## what are the values for tau_ndvi and tau_gcc based on? is this reasonable?
-    init[[i]] <- list(x = rep(1,length(data$y)), tau_add=runif(1,0,1)/var(diff(y.samp),na.rm=TRUE),
-                      tau_ndvi=10,tau_gcc=10)
+    init[[i]] <- list(x = rep(1,length(data$y)), 
+                      tau_add = runif(1,0,1)/var(diff(y.samp),na.rm=TRUE),
+                      tau_ndvi = 10,tau_gcc=10)
   }
   
   ## compile JAGS model
   j.model   <- jags.model (file = textConnection(ModisGCCModel),
                            data = data,
                            inits = init,
-                           n.chains = nchain)
+                           n.chains = n.chains)
   ## burn-in
   jags.out   <- coda.samples (model = j.model,
                               variable.names = c("tau_add","tau_ndvi","tau_gcc","r"),
                               n.iter = min(n.iter,2000))
-  #plot(jags.out)
   
   ## run MCMC
   jags.out   <- coda.samples (model = j.model,
