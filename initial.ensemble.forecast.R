@@ -46,12 +46,18 @@ initial.ensemble.FM <- function(site_num){
   output = array(NA,c(nt,ne,2))
   X = X.orig.dist
   r = r.orig.dist
-  
+
   for(t in 1:nt){
     output[t,,]=as.matrix(SSLPM(X,r))
     X=output[t,,1]
     r=output[t,,2]
   }
+  
+#### save plots produced to PDF
+  ## name of output file
+  file_name = paste('initial.ensemble.forecast',as.character(site_num), 'pdf',sep=".")
+  ## saves as PDF
+  pdf(file=file_name)
   
   #plot mean and CI of ensemble members time series
   ci = apply(output[,,1],1,quantile,c(0.025,0.5,0.975),na.rm=TRUE)
@@ -88,6 +94,12 @@ initial.ensemble.FM <- function(site_num){
   points(global_input_parameters$model.start.DOY:365,gcc2013[global_input_parameters$model.start.DOY:365],pch="+",cex=0.8)
   points(global_input_parameters$model.start.DOY:365,ndvi2013[global_input_parameters$model.start.DOY:365],pch="o",cex=0.8)
   lines(time,ci[2,])
+  
+## ends plot output to PDF
+  dev.off()
+  
+## name of initial ensemble forecast file
+  sprintf('The initial ensemble forecast for site No %.f is saved as %s',site_num,file_name)
 
   ############## Sensitivity
   # Since there is no environmental/climate driver, what are we taking the sensitivity of?

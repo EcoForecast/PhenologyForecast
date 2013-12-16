@@ -1,14 +1,14 @@
-particle.filter.FM <- function(site_num){
+update.particle.filter.forecast <- function(site_num,inputs.for.updating.forecast){
   source("SSLPM.r") ## Super Simple Logistic Model
   source("ciEnvelope.R")
   source("global_input_parameters.R")
   source("update.r.R")  
   
-  ########################################
-  #### dummy values for debugging ########
-  ########################################
-  site_num=1
+  ## inputs from particle filter output
+  nt = inputs.for.updating.forecast[1]
+  sample = inputs.for.updating.forecast[2]
   
+
   ### See also ph.filter.sd below
   
   ### observation data (real thing should be cleaned, rescaled GCC and NDVI from 2013 only)
@@ -16,7 +16,7 @@ particle.filter.FM <- function(site_num){
   #obs$GCC= c(rep(NA,182),cumsum(c(1,rnorm(344-182,-.005,.00001))))
   obs$NDVI= c(rep(NA,182),cumsum(c(1,rnorm(344-182,-.005,.00002))))
   obs$NDVI[210:240]=NA #
-  #obs$GCC[230:260]=NA #
+  obs$GCC[230:260]=NA #
   #########################################
   #########################################
   
@@ -26,7 +26,7 @@ particle.filter.FM <- function(site_num){
   doy <- strftime(cur_date, format = "%j")
   current.year = as.numeric(format(Sys.Date(), "%Y"))
   time = model.start.DOY:doy
-  nt = length(time)
+  new.nt = length(time)
   
   #load GCC data
   gcc.data <- read.csv( sprintf("gcc_data_site%i.csv",site_num) )
@@ -47,17 +47,17 @@ particle.filter.FM <- function(site_num){
   fall.cy.ndvi.data = subset(current.year.ndvi.data,days >= model.start.DOY)
   
   ### read in output from State Space Model for X and r
-  file_name = paste('Jags.SS.out.site',as.character(site_num), 'RData',sep=".")
-  load(file_name)
-  X.from.SS = as.matrix(jags.out.all.years.array[,5,])
-  r.from.SS = as.matrix(jags.out.all.years.array[,1,])  
+  #file_name = paste('Jags.SS.out.site',as.character(site_num), 'RData',sep=".")
+  #load(file_name)
+  #X.from.SS = as.matrix(jags.out.all.years.array[,5,])
+  #r.from.SS = as.matrix(jags.out.all.years.array[,1,])  
   
   #initial values for each ensemble member (average of all years of historical data)
-  X.orig=apply(X.from.SS,1,mean)
-  r.orig=apply(r.from.SS,1,mean)
+  #X.orig=apply(X.from.SS,1,mean)
+  #r.orig=apply(r.from.SS,1,mean)
   
   #take ensemble size from the size of the SS fit ensemble
-  ne=length(X.orig)
+  #ne=length(X.orig)
   
   ## Create a filter with GCC and NDVI equally weighted (uses only one data source if the other is NA)
   GCC=fall.cy.gcc.data[,4]
@@ -82,15 +82,25 @@ particle.filter.FM <- function(site_num){
   ph.filter.sd = ph.filter*.5
   
   ### resampling particle filter
-  sample=0
+  ## note sample defined above from particle filter outputs
   hist.r=list()  ## since we resample parameters, create a record of what values were used each step
   hist.r[[1]] = r ## initial parameter conditions
-  X = X.orig  ## reset state to the initial values, not the final values from the previous ensemble
-  r = r.orig
-  output = array(NA,c(nt,ne,2)) ## initialize output
+  ### load output from particle filter
+  X.output_file_name = paste('ForecastModel.X.out.site',as.character(site_num), 'RData',sep=".")
+  load(X.output_file_name)
+  X = as.matrix(X)  ## reset state to the initial values, not the final values from the previous ensemble
+  r.output_file_name = paste('ForecastModel.r.out.site',as.character(site_num), 'RData',sep=".")
+  load(r.output_file_name)
+  r = as.matrix(r)
+  ne = length(r)
+  ## load output from particle filter
+  output_file_name = paste('ForecastModel.X.out.site',as.character(site_num), 'RData',sep=".")
+  ### concatenate outputs later on
+  output_old <- as.matrix(load(output_file_name))
+  output = array(NA,c(new.nt-nt,ne,2)) ## initialize output
   
   ###### here's the actual forecast loop
-  for(t in 1:nt){
+  for(t in 1:new.nt-nt){
     
     ## forward step
     output[t,,]=as.matrix(SSLPM(X,r))
@@ -113,28 +123,17 @@ particle.filter.FM <- function(site_num){
       r = update.r(r,index)    
     }
     hist.r[[sample+1]] = r
-    
     #}
   }
   ##### end of forecast loop
-  
-  ## save X and r output to use in updating forecast model
-  X.output_file_name = paste('ForecastModel.X.out.site',as.character(site_num), 'RData',sep=".")
-  save(X,file = X.output_file_name)
-  r.output_file_name = paste('ForecastModel.r.out.site',as.character(site_num), 'RData',sep=".")
-  save(r,file = output_file_name)
-  
-  ### save output 
-  output_file_name = paste('ForecastModel.X.out.site',as.character(site_num), 'RData',sep=".")
-  save(output,file = output_file_name)
   
   ## Extract and summarize ph.filter
   ph.filter.pr = t(output[,,1])
   ph.filter.ci  = apply(ph.filter.pr,2,quantile,c(0.025,0.5,0.975))
   
   #### saves output so that it can appended to as the forecast iterates
-  ph.output_file_name = paste('ForecastModel.out.site',as.character(site_num), 'RData',sep=".")
-  save(ph.filter.pr,file = ph.output_file_name)
+  output_file_name = paste('ForecastModel.out.site',as.character(site_num), 'RData',sep=".")
+  save(ph.filter.pr,file = output_file_name)
   
   #### save plot produced to PDF
   ## name of output file
@@ -151,10 +150,6 @@ particle.filter.FM <- function(site_num){
   dev.off()
   
   ## name of initial ensemble forecast file
-print(sprintf('The particle filter forecast for site No %.f is saved as %s',site_num,file_name))
-  
-  ### need nt and sample for particle filter update
-  inputs.for.updating.forecast <- c(nt,sample)
-  return(inputs.for.updating.forecast)
+  print(sprintf('The particle filter forecast for site No %.f is saved as %s',site_num,file_name))
   
 }  

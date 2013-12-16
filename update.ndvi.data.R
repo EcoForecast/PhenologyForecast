@@ -1,6 +1,6 @@
-create.ndvi.data <- function(site.number){
-  # The function create.ndvi.data loads the MODIS data for the site site.number
-  # and calculates the NDVI values for that site. Output is saved in 
+update.ndvi.data <- function(site.number){
+  # The function update.ndvi.data loads the new MODIS data for the site site.number
+  # and calculates the NDVI values for that site. Output is appended into 
   # ndvi_data_siteX.csv, where X is the site number
   
   # First, we need to know the file name of the MODIS data that we just downloaded.
@@ -44,12 +44,12 @@ create.ndvi.data <- function(site.number){
     date_info = paste(year_dat[p],DOY_data[p]) # Convert DOY, year to date
     date_format[p] = strptime(date_info, "%Y %j")
   }
-
+  
   # Calculate the NDVI!
   NDVI_cal = (band_2_data - band_1_data) / (band_2_data + band_1_data)
   
   MODIS_DATA_ST <- data.frame(date = date_format, ndvi = NDVI_cal)
-
+  
   # Need to delete leap days...
   leap_days <- is.na(MODIS_DATA_ST)
   MODIS_DATA_ST <- as.data.frame(subset.data.frame(MODIS_DATA_ST,!leap_days[,2]))
@@ -73,14 +73,35 @@ create.ndvi.data <- function(site.number){
   # Finds indices of dates of modis data that are observed (and match possible_days)
   days.with.modis.data = match(as.Date(MODIS_DATA_ST$date),daily.dates)
   
-  # make time series vector of modis data, the same length as daily.dates
-  ndvi = rep(NA,length(daily.dates))
-  ndvi[days.with.modis.data] = MODIS_DATA_ST$ndvi
-    
-  # Make data frame of modis time series with dates 
-  NDVI.data = data.frame(date = daily.dates, ndvi = ndvi)
+  # make time series vector of new modis data, the same length as daily.dates
+  ndvi.new = rep(NA,length(daily.dates))
+  ndvi.new[days.with.modis.data] = MODIS_DATA_ST$ndvi
+  
+  # Load the existing NDVI data:
+  old.ndvi.data <- read.csv(sprintf("ndvi_data_site%i.csv",site.number))
+  
+  # Get the last date in the old data which is not NA:
+  not.nas <- !is.na(old.ndvi.data$ndvi)
+  counter <- 1:length(not.nas)
+  last.data.index <- max(counter[not.nas])
+  last.data.date <- as.Date(old.ndvi.data$date[last.data.index])
+  
+  # Get the index in the new data that corresponds to that date:
+  matches.date <- (daily.dates == last.data.date) # All FALSE except 1 TRUE
+  counter <- 1:length(daily.dates)
+  new.data.index <- counter[matches.date] # should just be a single integer
+  
+  # Make a data frame of the new data:
+  new.ndvi.data <- data.frame(date = daily.dates[(new.data.index+1):length(daily.dates)],
+                              ndvi = ndvi.new[(new.data.index+1):length(ndvi.new)])
+  
+  # Stick the old date (through last.data.date) together with the new data (after
+  # last.data.date):
+  date.combined = c( as.Date(old.ndvi.data$date[1:last.data.index]), new.ndvi.data$date )
+  ndvi.combined = c( old.ndvi.data[1:last.data.index,2], new.ndvi.data$ndvi )
+  combined.data = data.frame(date = date.combined, ndvi = ndvi.combined)
   
   # Save NDVI data:
-  write.csv(NDVI.data, file = sprintf("ndvi_data_site%i.csv",site.number),row.names=FALSE)
-    
+  write.csv(combined.data, file = sprintf("ndvi_data_site%i.csv",site.number),row.names=FALSE)
+  
 }

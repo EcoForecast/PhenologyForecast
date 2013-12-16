@@ -2,7 +2,7 @@
 
 # For each site, we need to run a state-space model, and then the forecast model for the current year
 for(site in 1:5) {
-
+  
   # Step 1: Download/update site GCC and MODIS data
   get.site.data(site)
   
@@ -20,10 +20,10 @@ for(site in 1:5) {
   
   # If not, then create the forecast model for that site:
   if(!FM.complete) {
-    create.FM.model(site) # This should create some files with forecasts and some paramaters
-    }
+    inputs.for.updating.forecast <- create.FM.model(site) # This should create some files with forecasts and some paramaters
+  }
   
   # Step 4: Check for new data not yet included in forecast model:
-  update.FM.model(site) # This should update the output from the forecast model for any new data
+  update.FM.model(site,inputs.for.updating.forecast) # This should update the output from the forecast model for any new data
   
 }
