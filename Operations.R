@@ -21,7 +21,7 @@ for(site in 1:5) {
   # Step 3: Check to see if the forecast model has been run (and has some output)
   # "FM" means forecast model, the particle filter in this case
   source("check.for.FM.model.R")
-  FM.created <- check.for.FM.model(site) # FM.created is TRUE/FALSE 
+  FM.complete <- check.for.FM.model(site) # FM.created is TRUE/FALSE 
   
   # If not, then create the forecast model for that site:
   if(!FM.complete) {
