@@ -2,8 +2,7 @@ create.FM.model <- function(site_num){
   # The function create.FM.model takes output from the state space model and
   # makes an initial (data free) forecast through the end of the year.
   # The forecast is plotted in a pdf begining with ParticleFilterForecast,
-  # (with a site number and date appended) and the initial conditions are saved 
-  # in the file ForecastModel.IC.site<site number>.Rdata. The output from the 
+  # (with a site number and date appended). The output from the 
   # current forecast is saved in a file begining with ForecastModel.X.out (with a 
   # site number and date appended).
   
@@ -62,21 +61,10 @@ create.FM.model <- function(site_num){
   }
   ##### end of forecast loop
   print("Initial forecasting complete.")
-  
-  ## save X and r initial conditions to use in updating forecast model:
-  IC_output_file_name = paste('ForecastModel.IC.site',
-                              as.character(site_num), 'RData',sep=".")
-  save(X.ic,r.ic,file = IC_output_file_name)
-  
+    
   ### save output (not sure if we want to save all of it... maybe just the most recent day's?)
-  date.string <- paste(as.character(current.year),
-                       format(as.Date(model.start.DOY-2,origin="2001-01-01"), 
-                              format="%m-%d"),sep="-") 
-  # Complicated! But just a date string to put in the file name. For the create FM 
-  # model it's the day BEFORE the first day of data.
-  
-  output_file_name = paste('ForecastModel.X.out.site', as.character(site_num), 
-                           date.string, 'RData',sep=".")
+  output_file_name = paste("ForecastModel.X.out.site", as.character(site_num),
+                           "RData",sep=".")
   save(output,file = output_file_name)
   
   ## Plot our forecast!
@@ -84,13 +72,22 @@ create.FM.model <- function(site_num){
   X.ci  = apply(X.mat,1,quantile,c(0.025,0.5,0.975))
     
   #### save plot produced to PDF
+  # Date of the last data point used in the forecast:
+  date.string <- paste(as.character(current.year),
+                       format(as.Date(model.start.DOY-2,origin="2001-01-01"), 
+                              format="%m-%d"),sep="-") 
+  # Complicated! But just a date string to put in the file name. For the create FM 
+  # model it's the day BEFORE the first day of data.
+  
   ## name of output file
-  file_name = paste('ParticleFilterForecast',as.character(site_num), date.string,
-                    'pdf',sep=".")
+  file_name = paste("ParticleFilterForecast",as.character(site_num),
+                    as.character(date.string),"pdf",sep=".")
+  
+  
   ## saves as PDF
   pdf(file=file_name)
   
-  ##plot filter
+  ## plot forecast:
   plot(time,X.ci[2,],type='n',main=paste("Particle Filter Forecast:",date.string)
        ,xlab="Day of Year",ylab="Pheno-state")
   source("ciEnvelope.R")
@@ -104,4 +101,10 @@ create.FM.model <- function(site_num){
   ## name of initial ensemble forecast file
   print(sprintf("The particle filter forecast for site Num %.f is saved as %s",site_num,file_name))
   
+  #### Save a file that contains the date of the last forecast:
+  last.date.filename <- paste("last.update.site", as.character(site_num), 
+                              "txt",sep=".")
+  sink(last.date.filename, append = FALSE)
+  cat("\"",date.string,"\"",sep="")
+  sink()  
 }  
