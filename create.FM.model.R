@@ -1,16 +1,16 @@
 create.FM.model <- function(site_num){
   # The function create.FM.model takes output from the state space model and
   # makes an initial (data free) forecast through the end of the year.
-  # The forecast is plotted in the file *NAME_OF_FM_PLOT*.pdf, and the initial
-  # conditions are saved in the files ForecastModel.X.out.site<site number>.csv
-  # and ForecastModel.r.out.site<site number>.csv.
+  # The forecast is plotted in a pdf begining with ParticleFilterForecast,
+  # (with a site number and date appended) and the initial conditions are saved 
+  # in the file ForecastModel.IC.site<site number>.Rdata. The output from the 
+  # current forecast is saved in a file begining with ForecastModel.X.out (with a 
+  # site number and date appended).
   
-  site_num = 1
   ## set up model time frame
   source("global_input_parameters.R")
   model.start.DOY=global_input_parameters$model.start.DOY
   cur_date = Sys.Date()
-  #doy <- strftime(cur_date, format = "%j")
   current.year = as.numeric(format(Sys.Date(), "%Y"))
   time = model.start.DOY:365  
   
