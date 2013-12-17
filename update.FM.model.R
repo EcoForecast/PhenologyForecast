@@ -67,23 +67,17 @@ update.FM.model <- function(site_num) {
   
   current.date <- Sys.Date()
   
-  #   ##########################
-  #   ##########################
-  #   # This stdev stuff should go into "output" in the FM creation step so that 
-  #   # the samples stay together properly!
-  #   ##########################
-  #   ##########################
-  #   
-  #   # Get standard deviations for measurement error from tau_gcc and tau_ndvi from
-  #   # our state-space model for now?
-  #   file_name = paste('Jags.SS.out.site',as.character(site_num), 'RData',sep=".")
-  #   load(file_name)
-  #   gcc.stdev <- 1/apply(jags.out.all.years.array[,3,],1,mean) # num.ensemble members x 1
-  #   ndvi.stdev <- 1/apply(jags.out.all.years.array[,4,],1,mean) # num.ensemble members x 1
+  # Get standard deviations for measurement error from tau_gcc and tau_ndvi from
+  # our state-space model for now?
+  file_name = paste('Jags.SS.out.site',as.character(site_num), 'RData',sep=".")
+  load(file_name)
+  # get the median precisions from the state space model output, convert to stdevs:
+  tau.gcc.all <- jags.out.all.years.array[,3,] # num.ensemble members x num.years  
+  gcc.stdev <- 1/median(as.vector(tau.gcc.all))
+  tau.ndvi.all <- jags.out.all.years.array[,4,] # num.ensemble members x num.years  
+  ndvi.stdev <- 1/median(as.vector(tau.ndvi.all))
   
-  # Obviously not a long-term solution...
-  gcc.stdev <- 0.1
-  ndvi.stdev <- 0.1
+  # process error:
   
   # while loop until you get to the present day:
   repeat{
