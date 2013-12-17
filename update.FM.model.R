@@ -12,6 +12,7 @@ update.FM.model <- function(site_num) {
   
   source("SSLPM.R")
   source("ciEnvelope.R")
+  source("find.extreme.GCC.NDVI.R")
   
   site_num = 1
   
@@ -35,6 +36,28 @@ update.FM.model <- function(site_num) {
   # Merge them:
   all.data <- merge(gcc.data,ndvi.data)
   
+  ##### Rescale the data:
+  # find max/min of ndvi and gcc over all years of record except current
+  # outputs (ndvi_max,ndvi_min,gcc_max,gcc_min)
+  first.year <- as.numeric(strftime(global_input_parameters$data.start.date, "%Y"))
+  
+  max_min_ndvi_gcc = find.extreme.GCC.NDVI(site_num, first.year, 
+                                           as.numeric(current.year)-1, 
+                                           use.interannual.means=TRUE)
+  ndvi_max = max_min_ndvi_gcc[1]
+  ndvi_min = max_min_ndvi_gcc[2]
+  gcc_max = max_min_ndvi_gcc[3]
+  gcc_min = max_min_ndvi_gcc[4]
+  # Rescale data to be between 0 and 1 (using max and min NDVI, GCC values from 
+  # all years except current year):
+  # rescale NDVI (and overwrite all.data$ndvi!)
+  all.data$ndvi <- (all.data$ndvi-ndvi_min)/(ndvi_max-ndvi_min)
+  # rescale GCC:
+  all.data$gcc.90 <- (all.data$gcc.90 - gcc_min)/(gcc_max - gcc_min)
+  all.data$gcc.mean <- (all.data$gcc.mean - gcc_min)/(gcc_max - gcc_min)
+  all.data$gcc.min <- (all.data$gcc.min - gcc_min)/(gcc_max - gcc_min)
+  all.data$gcc.max <- (all.data$gcc.max - gcc_min)/(gcc_max - gcc_min)  
+  
   # load the forecast model output:
   output_file_name = paste("ForecastModel.X.out.site", as.character(site_num),
                            "RData",sep=".")
@@ -44,23 +67,23 @@ update.FM.model <- function(site_num) {
   
   current.date <- Sys.Date()
   
-#   ##########################
-#   ##########################
-#   # This stdev stuff should go into "output" in the FM creation step so that 
-#   # the samples stay together properly!
-#   ##########################
-#   ##########################
-#   
-#   # Get standard deviations for measurement error from tau_gcc and tau_ndvi from
-#   # our state-space model for now?
-#   file_name = paste('Jags.SS.out.site',as.character(site_num), 'RData',sep=".")
-#   load(file_name)
-#   gcc.stdev <- apply(jags.out.all.years.array[,3,],1,mean) # num.ensemble members x 1
-#   ndvi.stdev <- apply(jags.out.all.years.array[,4,],1,mean) # num.ensemble members x 1
+  #   ##########################
+  #   ##########################
+  #   # This stdev stuff should go into "output" in the FM creation step so that 
+  #   # the samples stay together properly!
+  #   ##########################
+  #   ##########################
+  #   
+  #   # Get standard deviations for measurement error from tau_gcc and tau_ndvi from
+  #   # our state-space model for now?
+  #   file_name = paste('Jags.SS.out.site',as.character(site_num), 'RData',sep=".")
+  #   load(file_name)
+  #   gcc.stdev <- 1/apply(jags.out.all.years.array[,3,],1,mean) # num.ensemble members x 1
+  #   ndvi.stdev <- 1/apply(jags.out.all.years.array[,4,],1,mean) # num.ensemble members x 1
   
   # Obviously not a long-term solution...
-  gcc.stdev <- 0.4
-  ndvi.stdev <- 0.4
+  gcc.stdev <- 0.1
+  ndvi.stdev <- 0.1
   
   # while loop until you get to the present day:
   repeat{
@@ -97,8 +120,9 @@ update.FM.model <- function(site_num) {
       #### Resampling step:
       index = sample.int(length(X), length(X), replace = TRUE, prob = likelihood)
       # replace our previous guess with the PF output:
-      output[output.index,,1] = X[index]
-      output[output.index,,2] = r[index] 
+      output[output.index,,1] = X[index] # or maybe pmin(1,pmax(0,X[index]
+      output[output.index,,2] = r[index]       
+      
       
       #### Forecast step:
       # as long as we're not at the end of the year:
@@ -120,8 +144,8 @@ update.FM.model <- function(site_num) {
       #### save plot produced to PDF
       ## name of output file
       pdf.file.name = paste("ParticleFilterForecast",as.character(site_num),
-                        as.character(forecast.date),"pdf",sep=".")
-            
+                            as.character(forecast.date),"pdf",sep=".")
+      
       ## saves as PDF
       pdf(file=pdf.file.name)
       
@@ -142,7 +166,7 @@ update.FM.model <- function(site_num) {
       lines(model.start.DOY:365,X.ci[2,],
             main=paste("Particle Filter Forecast:",forecast.date),
             xlab="Day of Year",ylab="Pheno-state")
-
+      
       non.leap.year.doys <- as.numeric(strftime(plottable.data$date,"%j")) - (as.numeric(current.year)%%4 == 0)
       points(non.leap.year.doys, plottable.data$ndvi, pch="+",cex=0.8)
       points(non.leap.year.doys, plottable.data$gcc.90, pch="o",cex=0.5)
@@ -159,7 +183,7 @@ update.FM.model <- function(site_num) {
       # This is important as it is the date to save in the file tracking the last 
       # date assimilated
       last.date.assimilated <- forecast.date
-        
+      
     } # end if(new.data)
     
     # Increment the date, and update again!
@@ -178,6 +202,5 @@ update.FM.model <- function(site_num) {
   sink(last.date.filename, append = FALSE)
   cat("\"",date.string,"\"",sep="")
   sink()  
-   
-}
   
+}
