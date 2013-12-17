@@ -15,6 +15,13 @@ run.SS.model <- function(site_num){
   # just in case...)
   all.data <- merge(gcc.data,ndvi.data)
   
+  # Throw out years with no data!
+  no.data.vec <- is.na(all.data$gcc.90) & is.na(all.data$ndvi) # TRUE/FALSE vector of na locations
+  years <- as.numeric(strftime(all.data$date, "%Y"))
+  years.with.data <- unique(years[!no.data.vec])
+  all.data <- subset(all.data, years %in% years.with.data )
+  current.year <- as.numeric(strftime(Sys.Date(), "%Y"))
+  
   # Define fall dates:
   source("global_input_parameters.R")
   first.day.of.season <- global_input_parameters$model.start.DOY 
@@ -26,7 +33,7 @@ run.SS.model <- function(site_num){
   
   ## build data object for JAGS in year loop. 
   # pull out time, get year for each data point. 
-  time=fall.data$date
+  time = fall.data$date
   time_year = as.numeric(format(as.Date(time), "%Y"))
   
   
@@ -56,9 +63,10 @@ run.SS.model <- function(site_num){
   rescaled_NDVI <- (fall.data$ndvi-ndvi_min)/(ndvi_max-ndvi_min)
   rescaled_GCC <- (fall.data$gcc.90-gcc_min)/(gcc_max-gcc_min) # using gcc90
   
+  SS.years <- setdiff(years.with.data,current.year)
   # counts for loop                                     
   count = 0
-  for (YR in min(time_year):(max(time_year)-1)) { # loop over all years except current year
+  for (YR in SS.years) { # loop over all years except current year
     
     cat(sprintf("Running state-space model for site %i, year %i\n\n",site_num,YR))
     count = count + 1;
@@ -91,10 +99,11 @@ run.SS.model <- function(site_num){
   
   # Make filename and save jags output 
   file_name = paste('Jags.SS.out.site',as.character(site_num), 'RData',sep=".")
-  save(jags.out.all.years.array, file = file_name)
+  save(jags.out.all.years.array, SS.years, file = file_name)
   
   # Make plots
-  make.SS.plots(jags.out.all.years.array,fall.data$date,rescaled_NDVI,rescaled_GCC,site_num)
+  make.SS.plots(jags.out.all.years.array,fall.data$date,
+                rescaled_NDVI,rescaled_GCC,site_num)
   
   
 }
