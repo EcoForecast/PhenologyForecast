@@ -1,6 +1,0 @@
-"SITE_NAME","URL","save_dir","lat","lon"
-"Coweeta","http://phenocam.sr.unh.edu/data/archive/bartlett/ROI/bartlett_deciduous_0001_gcc.csv","bartlett_deciduous_0001_gcc.csv",35.0596,-83.428
-"Shalehillsczo","http://phenocam.sr.unh.edu/data/archive/coweeta/ROI/coweeta_deciduous_0002_gcc.csv","coweeta_deciduous_0002_gcc.csv",40.65,-77.9
-"Howland","http://phenocam.sr.unh.edu/data/archive/howland1/ROI/howland1_canopy_0001_gcc.csv","howland1_canopy_0001_gcc.csv",45.2041,-68.7403
-"Shenandoah","http://phenocam.sr.unh.edu/data/archive/shalehillsczo/ROI/shalehillsczo_canopy_0001_gcc.csv","shalehillsczo_canopy_0001_gcc.csv",38.5926,-78.3756
-"Bartlett","http://phenocam.sr.unh.edu/data/archive/shenandoah/ROI/shenandoah_canopy_0001_gcc.csv","shenandoah_canopy_0001_gcc.csv",44.0646,-71.2881
