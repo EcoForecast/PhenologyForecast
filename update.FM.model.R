@@ -78,8 +78,8 @@ update.FM.model <- function(site_num) {
   #   # our state-space model for now?
   #   file_name = paste('Jags.SS.out.site',as.character(site_num), 'RData',sep=".")
   #   load(file_name)
-  #   gcc.stdev <- apply(jags.out.all.years.array[,3,],1,mean) # num.ensemble members x 1
-  #   ndvi.stdev <- apply(jags.out.all.years.array[,4,],1,mean) # num.ensemble members x 1
+  #   gcc.stdev <- 1/apply(jags.out.all.years.array[,3,],1,mean) # num.ensemble members x 1
+  #   ndvi.stdev <- 1/apply(jags.out.all.years.array[,4,],1,mean) # num.ensemble members x 1
   
   # Obviously not a long-term solution...
   gcc.stdev <- 0.1
@@ -120,8 +120,9 @@ update.FM.model <- function(site_num) {
       #### Resampling step:
       index = sample.int(length(X), length(X), replace = TRUE, prob = likelihood)
       # replace our previous guess with the PF output:
-      output[output.index,,1] = X[index]
-      output[output.index,,2] = r[index] 
+      output[output.index,,1] = X[index] # or maybe pmin(1,pmax(0,X[index]
+      output[output.index,,2] = r[index]       
+      
       
       #### Forecast step:
       # as long as we're not at the end of the year:
