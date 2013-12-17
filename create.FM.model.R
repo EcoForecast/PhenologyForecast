@@ -78,14 +78,18 @@ create.FM.model <- function(site_num){
                               format="%m-%d"),sep="-") 
   # Complicated! But just a date string to put in the file name. For the create FM 
   # model it's the day BEFORE the first day of data.
-  
-  ## name of output file
-  file_name = paste("ParticleFilterForecast",as.character(site_num),
-                    as.character(date.string),"pdf",sep=".")
-  
+    
   
   ## saves as PDF
-  pdf(file=file_name)
+  # Make a directory hierarchy to save pdfs in:
+  dir.name <- paste("pdfs/site",as.character(site_num),sep="")
+  dir.create(dir.name,recursive=TRUE,showWarnings=FALSE) # doesn't do anything if already created
+  
+  ## name of output file
+  pdf_file_name = paste("ParticleFilterForecast",as.character(site_num),
+                    as.character(date.string),"pdf",sep=".")
+  
+  pdf(file=paste(dir.name,pdf_file_name,sep="/"))
   
   ## plot forecast:
   plot(time,X.ci[2,],type='n',main=paste("Particle Filter Forecast:",date.string)
@@ -99,7 +103,7 @@ create.FM.model <- function(site_num){
   dev.off()
   
   ## name of initial ensemble forecast file
-  print(sprintf("The particle filter forecast for site Num %.f is saved as %s",site_num,file_name))
+  print(sprintf("The particle filter forecast for site Num %.f is saved as %s",site_num,pdf_file_name))
   
   #### Save a file that contains the date of the last forecast:
   last.date.filename <- paste("last.update.site", as.character(site_num), 

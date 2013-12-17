@@ -1,4 +1,5 @@
 # A high-level outline of forecasting structure
+setwd("/var/www/ge585/PhenologyForecast/")
 
 # For each site, we need to run a state-space model, and then the forecast model for the current year
 for(site in 1:5) {

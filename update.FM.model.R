@@ -90,6 +90,7 @@ update.FM.model <- function(site_num) {
     # Keep this break statement floating at the top of the repeat loop:
     if(forecast.date > current.date) {break} # This will end the loop
     
+    print(paste("Running particle filter for",forecast.date,"at site",site_num))
     todays.data <- all.data[as.Date(all.data$date) == forecast.date,]
     new.data <- !(is.na(todays.data$gcc.90) & is.na(todays.data$ndvi)) # TRUE/FALSE
     
@@ -143,11 +144,15 @@ update.FM.model <- function(site_num) {
       
       #### save plot produced to PDF
       ## name of output file
+      dir.name <- paste("pdfs/site",as.character(site_num),sep="")
+      
+      ## name of output file
       pdf.file.name = paste("ParticleFilterForecast",as.character(site_num),
                             as.character(forecast.date),"pdf",sep=".")
       
+      
       ## saves as PDF
-      pdf(file=pdf.file.name)
+      pdf(file=paste(dir.name,pdf.file.name,sep="/"))
       
       #### plot forecast:
       # get rid of data from the future!
