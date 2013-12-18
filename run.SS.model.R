@@ -63,6 +63,9 @@ run.SS.model <- function(site_num){
   rescaled_NDVI <- (fall.data$ndvi-ndvi_min)/(ndvi_max-ndvi_min)
   rescaled_GCC <- (fall.data$gcc.90-gcc_min)/(gcc_max-gcc_min) # using gcc90
   
+  ratio_scale_NDVI = (max(rescaled_NDVI,na.rm=TRUE)-min(rescaled_NDVI,na.rm=TRUE))/(max(fall.data$ndvi,na.rm=TRUE) - min(fall.data$ndvi,na.rm=TRUE))
+  ratio_scale_GCC = (max(rescaled_GCC,na.rm=TRUE)-min(rescaled_GCC,na.rm=TRUE))/(max(fall.data$gcc.90,na.rm=TRUE) - min(fall.data$gcc.90,na.rm=TRUE))
+  
   SS.years <- setdiff(years.with.data,current.year)
   # counts for loop                                     
   count = 0
@@ -78,11 +81,11 @@ run.SS.model <- function(site_num){
     # Make list of "data" to be used as input for RunJAGS
     x_ic <- global_input_parameters$x_ic
     tau_ic <- global_input_parameters$tau_ic
-    a_ndvi <- global_input_parameters$a_ndvi
+    a_ndvi <- (global_input_parameters$a_ndvi)*ratio_scale_NDVI
     r_ndvi <- global_input_parameters$r_ndvi
     a_gcc <- global_input_parameters$a_gcc
     r_gcc <- global_input_parameters$r_gcc
-    a_add <- global_input_parameters$a_add
+    a_add <- (global_input_parameters$a_add)*ratio_scale_GCC
     r_add <- global_input_parameters$r_add
     
     data <- list(y = rescaled_NDVI_one_year,z = rescaled_GCC_one_year,
