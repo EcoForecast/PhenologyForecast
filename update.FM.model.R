@@ -117,12 +117,17 @@ update.FM.model <- function(site_num) {
       }
       likelihood <- likelihood.gcc + likelihood.ndvi
       
+      # if there is an outlier, so bad that it crashed the model, we set 
+      # the likelihoods to all the same (smallish) value
+      if (sum(likelihood)==0){    
+        likelihood = rep(0.00001,length(likelihood))
+      }
+      
       #### Resampling step:
       index = sample.int(num.ensemble, num.ensemble, replace = TRUE, prob = likelihood)
       # replace our previous guess with the PF output:
       output[output.index,,1] = X[index] # or maybe pmin(1,pmax(0,X[index]
       output[output.index,,2] = r[index]       
-      
       
       #### Forecast step:
       # as long as we're not at the end of the year:

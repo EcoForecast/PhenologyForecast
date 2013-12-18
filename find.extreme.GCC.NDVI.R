@@ -12,11 +12,7 @@ find.extreme.GCC.NDVI <- function(site.number, first.year, last.year,
   # the mean values taken across the min/max values from each SEASON IN EACH year.
   # MINMUM = JAN FEB
   # MAXIMUM = JUL AUG
-  
-  ##### From Angela: SIDENOTE: this function takes a long time/inefficient because it is written 
-  ##### to load ALL of the data for each year instead of loading all of the data once and 
-  ##### parsing it into different years. 
-  
+
   if(use.interannual.means == FALSE){
     # NDVI data:
     ndvi.all = read.csv(sprintf("ndvi_data_site%i.csv",site.number))
@@ -50,10 +46,10 @@ find.extreme.GCC.NDVI <- function(site.number, first.year, last.year,
     jul_aug_ndvi = which(doy.ndvi.selected < 244 & doy.ndvi.selected > 181 ) # days 182-243
     jul_aug_gcc = which(doy.gcc.selected < 244 & doy.gcc.selected > 181)
     
-    ndvi_max = suppressWarnings(mean(ndvi.selected[jul_aug_ndvi],na.rm=TRUE))
-    ndvi_min = suppressWarnings(mean(ndvi.selected[jan_feb_ndvi],na.rm=TRUE))
-    gcc_max = suppressWarnings(mean(gcc.selected[jul_aug_gcc],na.rm=TRUE))
-    gcc_min = suppressWarnings(mean(gcc.selected[jan_feb_gcc],na.rm=TRUE))
+    ndvi_max = suppressWarnings(median(ndvi.selected[jul_aug_ndvi],na.rm=TRUE))
+    ndvi_min = suppressWarnings(median(ndvi.selected[jan_feb_ndvi],na.rm=TRUE))
+    gcc_max = suppressWarnings(median(gcc.selected[jul_aug_gcc],na.rm=TRUE))
+    gcc_min = suppressWarnings(median(gcc.selected[jan_feb_gcc],na.rm=TRUE))
     
   }
   else { # use.interannual.means == TRUE
@@ -75,11 +71,24 @@ find.extreme.GCC.NDVI <- function(site.number, first.year, last.year,
     } # end for loop over years
     
     # IGNORE WARNINGS, Angela's got this... =)
-    ndvi_max = suppressWarnings(mean(ndvi_max_yr,na.rm=TRUE))
-    ndvi_min = suppressWarnings(mean(ndvi_min_yr,na.rm=TRUE))
-    gcc_max = suppressWarnings(mean(gcc_max_yr,na.rm=TRUE))
-    gcc_min = suppressWarnings(mean(gcc_min_yr,na.rm=TRUE))    
+    ndvi_max = suppressWarnings(median(ndvi_max_yr,na.rm=TRUE))
+    ndvi_min = suppressWarnings(median(ndvi_min_yr,na.rm=TRUE))
+    gcc_max = suppressWarnings(median(gcc_max_yr,na.rm=TRUE))
+    gcc_min = suppressWarnings(median(gcc_min_yr,na.rm=TRUE))    
     
+  }
+  
+  if (is.na(gcc_min)){
+    gcc_min = 0
+  }
+  if (is.na(ndvi_min)){
+    ndvi_min = 0
+  }
+  if (is.na(gcc_max)){
+    gcc_max = 1
+  }
+  if (is.na(ndvi_max)){
+    ndvi_max = 1
   }
   
   max_min_ndvi_gcc = c(ndvi_max,ndvi_min,gcc_max,gcc_min)
