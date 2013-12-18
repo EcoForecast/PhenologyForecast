@@ -74,14 +74,14 @@ update.FM.model <- function(site_num) {
   load(file_name)
   # get the median precisions from the state space model output, convert to stdevs:
   tau.gcc.all <- jags.out.all.years.array[,3,] # num.ensemble members x num.years  
-  gcc.stdev <- 1/median(as.vector(tau.gcc.all))
+  gcc.stdev <- 1/sqrt(median(as.vector(tau.gcc.all)))
   tau.ndvi.all <- jags.out.all.years.array[,4,] # num.ensemble members x num.years  
-  ndvi.stdev <- 1/median(as.vector(tau.ndvi.all))
+  ndvi.stdev <- 1/sqrt(median(as.vector(tau.ndvi.all)))
   
   #### process error: 
   # Get process error from the SS model output (tau_add):
   tau.add.all <- jags.out.all.years.array[,2,] # num.ensemble members x num.years  
-  process.stdev <- 1/median(as.vector(tau.add.all))
+  process.stdev <- 1/sqrt(median(as.vector(tau.add.all)))
   
   
   # while loop until you get to the present day:
