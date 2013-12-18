@@ -69,16 +69,16 @@ find.extreme.GCC.NDVI <- function(site.number, first.year, last.year,
   gcc_min = suppressWarnings(median(gcc_min_yr,na.rm=TRUE))    
   
   if (is.na(gcc_min)){
-    gcc_min =  suppressWarnings(min(subset(gcc.all$gcc.90, (years.gcc < last.year)) ,na.rm=TRUE))
+    gcc_min =  suppressWarnings(min(subset(gcc.all$gcc.90, (years.gcc <= last.year)) ,na.rm=TRUE))
   }
   if (is.na(ndvi_min)){
-    ndvi_min = suppressWarnings(min(subset(ndvi.all$ndvi, (years.ndvi < last.year)), na.rm=TRUE))
+    ndvi_min = suppressWarnings(min(subset(ndvi.all$ndvi, (years.ndvi <= last.year)), na.rm=TRUE))
   }
   if (is.na(gcc_max)){
-    gcc_max = suppressWarnings(max(subset(gcc.all$gcc.90, (years.gcc < last.year)),na.rm=TRUE))
+    gcc_max = suppressWarnings(max(subset(gcc.all$gcc.90, (years.gcc <= last.year)),na.rm=TRUE))
   }
   if (is.na(ndvi_max)){
-    ndvi_max = suppressWarnings(max(subset(ndvi.all$ndvi, (years.ndvi < last.year)),na.rm=TRUE))
+    ndvi_max = suppressWarnings(max(subset(ndvi.all$ndvi, (years.ndvi <= last.year)),na.rm=TRUE))
   }   
   
   max_min_ndvi_gcc = c(ndvi_max,ndvi_min,gcc_max,gcc_min)
