@@ -38,7 +38,7 @@ find.extreme.GCC.NDVI <- function(site.number, first.year, last.year,
 
         # gets ndvi/gcc max/min... throws warnings because NA for entire year 
         # warning: no non-missing arguments to max; returning -Inf
-        # IGNORE WARNINGS, Angela's got this...
+        # IGNORE WARNINGS, Angela's got this... =)
 #         ndvi_max = suppressWarnings(max(ndvi.selected,na.rm=TRUE))
 #         ndvi_min = suppressWarnings(min(ndvi.selected,na.rm=TRUE))
 #         gcc_max = suppressWarnings(max(gcc.selected,na.rm=TRUE))
@@ -74,7 +74,7 @@ find.extreme.GCC.NDVI <- function(site.number, first.year, last.year,
       gcc_min_yr[count] = out.vec[4]      
     } # end for loop over years
     
-    # IGNORE WARNINGS, Angela's got this...    
+    # IGNORE WARNINGS, Angela's got this... =)
     ndvi_max = suppressWarnings(mean(ndvi_max_yr,na.rm=TRUE))
     ndvi_min = suppressWarnings(mean(ndvi_min_yr,na.rm=TRUE))
     gcc_max = suppressWarnings(mean(gcc_max_yr,na.rm=TRUE))

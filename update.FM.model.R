@@ -14,8 +14,6 @@ update.FM.model <- function(site_num) {
   source("ciEnvelope.R")
   source("find.extreme.GCC.NDVI.R")
   
-  site_num = 1
-  
   current.year <- strftime(Sys.Date(),"%Y")
   source("global_input_parameters.R")
   model.start.DOY <- global_input_parameters$model.start.DOY
@@ -61,29 +59,30 @@ update.FM.model <- function(site_num) {
   # load the forecast model output:
   output_file_name = paste("ForecastModel.X.out.site", as.character(site_num),
                            "RData",sep=".")
-  load(output_file_name) # loads a num_days x num_ensemble x 2 array called output
+  load(output_file_name) # loads a num.days x num.ensemble x 2 array called output
+  
+  # Number of ensemble members:
+  num.ensemble <- dim(output)[2]
   
   forecast.date <- last.forecast.date + 1
   
   current.date <- Sys.Date()
   
-  #   ##########################
-  #   ##########################
-  #   # This stdev stuff should go into "output" in the FM creation step so that 
-  #   # the samples stay together properly!
-  #   ##########################
-  #   ##########################
-  #   
-  #   # Get standard deviations for measurement error from tau_gcc and tau_ndvi from
-  #   # our state-space model for now?
-  #   file_name = paste('Jags.SS.out.site',as.character(site_num), 'RData',sep=".")
-  #   load(file_name)
-  #   gcc.stdev <- 1/apply(jags.out.all.years.array[,3,],1,mean) # num.ensemble members x 1
-  #   ndvi.stdev <- 1/apply(jags.out.all.years.array[,4,],1,mean) # num.ensemble members x 1
+  # Get standard deviations for measurement error from tau_gcc and tau_ndvi from
+  # our state-space model for now?
+  file_name = paste('Jags.SS.out.site',as.character(site_num), 'RData',sep=".")
+  load(file_name)
+  # get the median precisions from the state space model output, convert to stdevs:
+  tau.gcc.all <- jags.out.all.years.array[,3,] # num.ensemble members x num.years  
+  gcc.stdev <- 1/median(as.vector(tau.gcc.all))
+  tau.ndvi.all <- jags.out.all.years.array[,4,] # num.ensemble members x num.years  
+  ndvi.stdev <- 1/median(as.vector(tau.ndvi.all))
   
-  # Obviously not a long-term solution...
-  gcc.stdev <- 0.1
-  ndvi.stdev <- 0.1
+  #### process error: 
+  # Get process error from the SS model output (tau_add):
+  tau.add.all <- jags.out.all.years.array[,2,] # num.ensemble members x num.years  
+  process.stdev <- 1/median(as.vector(tau.add.all))
+  
   
   # while loop until you get to the present day:
   repeat{
@@ -119,7 +118,7 @@ update.FM.model <- function(site_num) {
       likelihood <- likelihood.gcc + likelihood.ndvi
       
       #### Resampling step:
-      index = sample.int(length(X), length(X), replace = TRUE, prob = likelihood)
+      index = sample.int(num.ensemble, num.ensemble, replace = TRUE, prob = likelihood)
       # replace our previous guess with the PF output:
       output[output.index,,1] = X[index] # or maybe pmin(1,pmax(0,X[index]
       output[output.index,,2] = r[index]       
@@ -134,6 +133,9 @@ update.FM.model <- function(site_num) {
           r = output[t-1,,2]
           ## forward step
           output[t,,] = SSLPM(X,r) # num.ensembles x 2
+          
+          # Add the process error to the state estimate:
+          output[t,,1] = output[t,,1] + rnorm(num.ensemble,0,process.stdev)
         }        
       }
       ##### end of forecast loop
