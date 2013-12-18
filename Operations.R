@@ -1,8 +1,12 @@
 # A high-level outline of forecasting structure
 setwd("/var/www/ge585/PhenologyForecast/")
 
+# All site information is read from the file "site_metadata.csv". 
+# Analysis will be performed on each site in that file.
+num.sites = as.numeric(nrow(read.csv("site_metadata.csv")))
+
 # For each site, we need to run a state-space model, and then the forecast model for the current year
-for(site in 1:5) {
+for(site in 1:num.sites) {
   
   # Step 1: Download/update site GCC and MODIS data
   source("get.site.data.R")
@@ -34,3 +38,6 @@ for(site in 1:5) {
   update.FM.model(site) # This should update the output from the forecast model for any new data
   
 }
+
+# Also, plot all of the data:
+source("PlotDataTimeSeries.R")

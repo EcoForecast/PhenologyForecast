@@ -28,7 +28,8 @@ RunJAGS <- function(data,n.iter,n.chains){
   tau_ndvi ~ dgamma(a_ndvi,r_ndvi)
   tau_gcc ~ dgamma(a_gcc,r_gcc)
   tau_add ~ dgamma(a_add,r_add)
-  r ~ dnorm(0.5,1)
+  r ~ dexp(0.148) # Exp is the maximum entropy distribution for constraints of positive with givn mean
+                  # 0.148 is from Richardson et al. 2006.
 
   }"
     
