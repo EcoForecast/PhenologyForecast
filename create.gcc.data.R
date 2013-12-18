@@ -32,6 +32,20 @@ create.gcc.data <- function(site.number){
   GCC.data = data.frame(date = daily.dates, gcc.min = gcc.min, gcc.max = gcc.max, 
                         gcc.mean = gcc.mean, gcc.90 = gcc.90)
   
+  #### THIS IS A LITTLE DUMB, BUT...
+  # We need to do some quality control for one of the test sites (Howland Forest before 2010):
+  site.metadata <- read.table("site_metadata.csv",header = TRUE, 
+                              sep=",",stringsAsFactors=FALSE) # site name, phenocam url, lat, lon
+  site.name <- site.metadata$site_name[site.number]
+  if(site.name == "Howland") { # Terrible data before 2010!
+    bad.days <- daily.dates < as.Date("2010-03-27")
+    GCC.data$gcc.min[bad.days] = NA
+    GCC.data$gcc.max[bad.days] = NA
+    GCC.data$gcc.mean[bad.days] = NA
+    GCC.data$gcc.90[bad.days] = NA
+  }
+  
+  
   # Save GCC data:
   write.csv(GCC.data, file = sprintf("gcc_data_site%i.csv",site.number),row.names=FALSE)
   
