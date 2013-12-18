@@ -78,6 +78,19 @@ find.extreme.GCC.NDVI <- function(site.number, first.year, last.year,
     
   }
   
+  if (is.na(gcc_min)){
+    gcc_min = 0
+  }
+  if (is.na(ndvi_min)){
+    ndvi_min = 0
+  }
+  if (is.na(gcc_max)){
+    gcc_max = 1
+  }
+  if (is.na(ndvi_max)){
+    ndvi_max = 1
+  }
+  
   max_min_ndvi_gcc = c(ndvi_max,ndvi_min,gcc_max,gcc_min)
   
   if(any(is.infinite(max_min_ndvi_gcc))){
