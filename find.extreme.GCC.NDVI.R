@@ -71,10 +71,10 @@ find.extreme.GCC.NDVI <- function(site.number, first.year, last.year,
     } # end for loop over years
     
     # IGNORE WARNINGS, Angela's got this... =)
-    ndvi_max = suppressWarnings(mean(ndvi_max_yr,na.rm=TRUE))
-    ndvi_min = suppressWarnings(mean(ndvi_min_yr,na.rm=TRUE))
-    gcc_max = suppressWarnings(mean(gcc_max_yr,na.rm=TRUE))
-    gcc_min = suppressWarnings(mean(gcc_min_yr,na.rm=TRUE))    
+    ndvi_max = suppressWarnings(median(ndvi_max_yr,na.rm=TRUE))
+    ndvi_min = suppressWarnings(median(ndvi_min_yr,na.rm=TRUE))
+    gcc_max = suppressWarnings(median(gcc_max_yr,na.rm=TRUE))
+    gcc_min = suppressWarnings(median(gcc_min_yr,na.rm=TRUE))    
     
   }
   
