@@ -1,6 +1,7 @@
 ### define function that runs JAGS model
 RunJAGS <- function(data,n.iter,n.chains){
   require(rjags)
+  source("global_input_parameters.R") # For burn-in
   
   ##JAGS code
   ModisGCCModel = "
@@ -51,7 +52,7 @@ RunJAGS <- function(data,n.iter,n.chains){
   ## burn-in
   jags.out   <- coda.samples (model = j.model,
                               variable.names = c("tau_add","tau_ndvi","tau_gcc","r"),
-                              n.iter = min(n.iter,2000))
+                              n.iter = min(n.iter,global_input_parameters$burn.in.iterations))
   
   ## run MCMC
   jags.out   <- coda.samples (model = j.model,
