@@ -44,10 +44,12 @@ make.SS.plots <- function(jags.out.all.years.array,time,
 #    }
     lines(182:365,ci[2,],type='l',ylim=c(0, 1))
     
-    ##### MCMC diagnostics
-    source("corr.and.MCMC.Diag.forSSModel.R")
-    corr.and.MCMC.Diag.forSSModel(jags.out.all.years.array)
-  }
+    }
+  
+  ##### MCMC diagnostics
+  source("corr.and.MCMC.Diag.forSSModel.R")
+  corr.and.MCMC.Diag.forSSModel(jags.out.all.years.array)
+  
   dev.off()
  
 }
