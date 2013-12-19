@@ -115,7 +115,7 @@ update.FM.model <- function(site_num) {
       } else {
         likelihood.gcc <- dnorm(X,todays.data$gcc.90,gcc.stdev)
       }
-      likelihood <- likelihood.gcc + likelihood.ndvi
+      likelihood <- likelihood.gcc * likelihood.ndvi
       
       # if there is an outlier, so bad that it crashed the model, we set 
       # the likelihoods to all the same (smallish) value
