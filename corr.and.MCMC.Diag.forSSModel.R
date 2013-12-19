@@ -1,7 +1,7 @@
 corr.and.MCMC.Diag.forSSModel <- function(jags.out.all.years.array) {
 source("global_input_parameters.R")
   ##### MCMC diagnostics
-pheno.state.fromallchains <- jags.out.all.years.array[,5,]
+pheno.state.fromallchains <- jags.out.all.years.array[,180,]
 ### hardcoding number of chains for now
 length.of.chain <- length(pheno.state.fromallchains)/3
 first.chain <-pheno.state.fromallchains[1:length.of.chain]
