@@ -173,7 +173,7 @@ update.FM.model <- function(site_num) {
       
       plot(model.start.DOY:365,X.ci[2,],type='n',
            main=paste("Particle Filter Forecast:",forecast.date),
-           xlab="Day of Year",ylab="Pheno-state")
+           xlab="Day of Year",ylab="Pheno-state",ylim=c(0,1.2))
       ciEnvelope(model.start.DOY:365,X.ci[1,],X.ci[3,],col="light grey")
       lines(model.start.DOY:365,X.ci[2,],
             main=paste("Particle Filter Forecast:",forecast.date),
