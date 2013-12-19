@@ -108,14 +108,14 @@ update.FM.model <- function(site_num) {
       if(is.na(todays.data$ndvi)){
         likelihood.ndvi <- rep(0,3000) # no likelihood if no data...
       } else {
-        likelihood.ndvi <- dnorm(X,todays.data$ndvi,ndvi.stdev)
+        log.likelihood.ndvi <- dnorm(X,todays.data$ndvi,ndvi.stdev,log=TRUE)
       }
       if(is.na(todays.data$gcc.90)){
         likelihood.gcc <- rep(0,3000) # no likelihood if no data...
       } else {
-        likelihood.gcc <- dnorm(X,todays.data$gcc.90,gcc.stdev)
+        log.likelihood.gcc <- dnorm(X,todays.data$gcc.90,gcc.stdev,log=TRUE)
       }
-      likelihood <- likelihood.gcc + likelihood.ndvi
+      likelihood <- exp(log.likelihood.gcc + log.likelihood.ndvi)
       
       # if there is an outlier, so bad that it crashed the model, we set 
       # the likelihoods to all the same (smallish) value
@@ -173,7 +173,7 @@ update.FM.model <- function(site_num) {
       
       plot(model.start.DOY:365,X.ci[2,],type='n',
            main=paste("Particle Filter Forecast:",forecast.date),
-           xlab="Day of Year",ylab="Pheno-state")
+           xlab="Day of Year",ylab="Pheno-state",ylim=c(0,1.2))
       ciEnvelope(model.start.DOY:365,X.ci[1,],X.ci[3,],col="light grey")
       lines(model.start.DOY:365,X.ci[2,],
             main=paste("Particle Filter Forecast:",forecast.date),

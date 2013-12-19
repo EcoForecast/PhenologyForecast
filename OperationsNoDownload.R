@@ -20,13 +20,13 @@ for(site in 1:num.sites) {
 #   # If not, then create the state space model for that site:
 #   if(!SS.complete) {
     source("run.SS.model.R")
-    run.SS.model(site) # This should create some files which contain inputs for the forecast model
+   # run.SS.model(site) # This should create some files which contain inputs for the forecast model
 #   }
 #   
   # Step 3: Check to see if the forecast model has been run (and has some output)
   # "FM" means forecast model, the particle filter in this case
-  source("check.for.FM.model.R")
-  FM.complete <- check.for.FM.model(site) # FM.created is TRUE/FALSE 
+#  source("check.for.FM.model.R")
+#  FM.complete <- check.for.FM.model(site) # FM.created is TRUE/FALSE 
   
 #   # If not, then create the forecast model for that site:
 #   if(!FM.complete) {
