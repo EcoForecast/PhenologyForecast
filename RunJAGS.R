@@ -2,9 +2,10 @@
 RunJAGS <- function(data,n.iter,n.chains){
   require(rjags)
   source("global_input_parameters.R") # For burn-in
+  model = global_input_parameters$model
   
   ##JAGS code
-  ModisGCCModel = "
+  LogisticGrowth = "
   model{
   #### Data Model: NDVI
   for(i in 1:n){
@@ -33,14 +34,51 @@ RunJAGS <- function(data,n.iter,n.chains){
                   # 0.148 is from Richardson et al. 2006.
 
   }"
-    
+  
+
+  LogitRandomWalk= "
+  model{
+  for(yr in 1:ny){
+
+    #### Data Model: NDVI
+    for(i in 1:n){
+      y[yr,i] ~ dnorm(x[yr,i],tau_ndvi)
+    }
+  
+    #### Data Model: GCC
+    for(i in 1:n){
+      z[yr,i] ~ dnorm(x[yr,i],tau_gcc)
+    }
+  
+    #### Process Model
+    for(i in 2:n){
+      #  lcolor[i] <- logit(x[i-1])
+      #  color[i]~dnorm(lcolor[i],tau_add)
+      #  logit(x[i]) <- color[i]
+      x[yr,i] ~ dnorm(x[yr,i-1],tau_add)
+    }
+
+    x[yr,1] ~ dnorm(x_ic,tau_ic)
+  }  ## end loop over years
+
+  #### Priors
+  tau_ndvi ~ dgamma(a_ndvi,r_ndvi)
+  tau_gcc ~ dgamma(a_gcc,r_gcc)
+  tau_add ~ dgamma(a_add,r_add)  
+}"
+  
+  
+  ModisGCCModel = switch(model,
+                         LogisticGrowth = LogisticGrowth,
+                         LogitRandomWalk = LogitRandomWalk)
+  
   ## JAGS initial conditions
   init <- list()
   for(i in 1:n.chains){
-    y.samp = sample(data$y,length(data$y),replace=TRUE)
+    #y.samp = sample(data$y,length(data$y),replace=TRUE)
     ########## what are the values for tau_ndvi and tau_gcc based on? is this reasonable?
-    init[[i]] <- list(x = rep(1,length(data$y)), 
-                      tau_add = runif(1,0,1)/var(diff(y.samp),na.rm=TRUE),
+    init[[i]] <- list(#x = rep(1,length(data$y)), 
+                      tau_add = runif(1,0.5,2),#runif(1,0,1)/var(diff(y.samp),na.rm=TRUE),
                       tau_ndvi = 10,tau_gcc=10)
   }
   
