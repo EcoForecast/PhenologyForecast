@@ -12,7 +12,8 @@ global_input_parameters <- list(
   r_gcc = 0.316, # state-space model JAGS input for gamma rate parameter for gcc prior
   a_add = 1.41, # state-space model JAGS input for gamma shape parameter for process model
   r_add = 0.71, # state-space model JAGS input for gamma rate parameter for process model
-  burn.in.iterations = 10000 # Number of iterations for JAGS burn-in
-  model = "LogitRandomWalk"
-  useMODISTools = FALSE
+  burn.in.iterations = 10000, # Number of iterations for JAGS burn-in
+  model = "LogitRandomWalk",
+  useMODISTools = FALSE,
+  num.ensembles = 5000
   )
