@@ -1,7 +1,7 @@
 #!/bin/bash
 # Make gif animation out of plots:
 
-cd /var/www/ge585/PhenologyForecast/pdfs;
+cd pdfs;
 
 for d in site*
 do cd "$d";
@@ -13,6 +13,6 @@ done
 
 convert -delay 15 *.jpg -loop 0 Site"${d%.pdf}.gif";
 rm *.jpg;
-cd /var/www/ge585/PhenologyForecast/pdfs;
+cd ..;
 echo "Finished another site"
 done
