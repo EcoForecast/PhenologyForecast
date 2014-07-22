@@ -1,12 +1,25 @@
 ### # Step 3 of Operations Script: check to see if state space model has already been run
-check.for.FM.model <- function(site_num) {
+check.for.FM.model <- function(site.number) {
   
   ## if FM model already ran, it will have produced output for the site being run 
   # with the following file name
-  filename <- last.date.filename <- paste("last.update.site", as.character(site_num), 
+  filename <- last.date.filename <- paste("last.update.site", as.character(site.number), 
                                           "txt",sep=".")
-  
-  ## checks to see if this file exists in the current directory and if so function evaluates to TRUE
-  return(file.exists(filename))
+
+  ## checks to see if this file exists in the current directory 
+  if(file.exists(filename)){
+    
+    ##check to see if it's a new year
+    read.in <- source(filename)
+    last.forecast.year <- as.numeric(strftime(as.Date(read.in$value), "%Y"))
+    current.year <- as.numeric(strftime(Sys.Date(),"%Y"))
+    if(current.year > last.forecast.year){
+      ## if it's a new year, delete the update file and start fresh
+      file.remove(filename)
+      return(FALSE)
+    }
+    return(TRUE)    
+  }
+  return(FALSE)
   
 } 
