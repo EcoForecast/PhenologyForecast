@@ -1,5 +1,5 @@
 # A high-level outline of forecasting structure
-setwd("/var/www/ge585/PhenologyForecast/")
+setwd("/home/dietze/PhenologyForecast/")
 
 # All site information is read from the file "site_metadata.csv". 
 # Analysis will be performed on each site in that file.

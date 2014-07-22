@@ -50,7 +50,7 @@ create.ndvi.data <- function(site.number,useMODISTools = FALSE){
     ## process the data from PEcAn.data.remote netCDF
     
     ## load
-    load(paste0("./MODIS/",site.num,".RData"))
+    load(paste0("./MODIS/",site.number,".RData"))
     
     ## extract variables
     band_1_data = site.data$b01
