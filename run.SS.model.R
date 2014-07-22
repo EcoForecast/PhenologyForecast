@@ -17,7 +17,7 @@ run.SS.model <- function(site.number){
   all.data <- merge(gcc.data,ndvi.data)
   
   # Throw out years with no data!
-  no.data.vec <- is.na(all.data$gcc.90) & is.na(all.data$ndvi) # TRUE/FALSE vector of na locations
+  no.data.vec <- is.na(all.data$gcc.mean) & is.na(all.data$ndvi) # TRUE/FALSE vector of na locations
   years <- as.numeric(strftime(all.data$date, "%Y"))
   years.with.data <- unique(years[!no.data.vec])
   all.data <- subset(all.data, years %in% years.with.data )
@@ -27,14 +27,20 @@ run.SS.model <- function(site.number){
   source("global_input_parameters.R")
   first.day.of.season <- global_input_parameters$model.start.DOY 
   day.of.year <- as.numeric( strftime(all.data$date, format="%j") ) # a vector of the DOY for each date
+  model = global_input_parameters$model
   
   # We are only going to use the fall data:
   fall.days <- (day.of.year >= first.day.of.season) & (day.of.year < 366) # solves the leap year problem
-  fall.data = all.data[fall.days,]
-  
+  if(global_input_parameters$season == "FALL"){
+    all.data = all.data[fall.days,]
+  } else {
+    if(global_input_parameters$season == "SPRING"){
+      all.data = all.data[!fall.days,]
+    }
+  }
   ## build data object for JAGS in year loop. 
   # pull out time, get year for each data point. 
-  time = fall.data$date
+  time = all.data$date
   time_year = as.numeric(format(as.Date(time), "%Y"))
   
   
@@ -56,12 +62,12 @@ run.SS.model <- function(site.number){
   gcc_min = max_min_ndvi_gcc[4]
   # Rescale data to be between 0 and 1 (using max and min NDVI, GCC values from 
   # all years except current year):
-  rescaled_NDVI <- (fall.data$ndvi-ndvi_min)/(ndvi_max-ndvi_min)
+  rescaled_NDVI <- (all.data$ndvi-ndvi_min)/(ndvi_max-ndvi_min)
   rescaled_NDVI[rescaled_NDVI < -0.3] = NA
-  rescaled_GCC <- (fall.data$gcc.90-gcc_min)/(gcc_max-gcc_min) # using gcc90
+  rescaled_GCC <- (all.data$gcc.mean-gcc_min)/(gcc_max-gcc_min) # using gcc90
   
-  ratio_scale_NDVI = (max(rescaled_NDVI,na.rm=TRUE)-min(rescaled_NDVI,na.rm=TRUE))/(max(fall.data$ndvi,na.rm=TRUE) - min(fall.data$ndvi,na.rm=TRUE))
-  ratio_scale_GCC = (max(rescaled_GCC,na.rm=TRUE)-min(rescaled_GCC,na.rm=TRUE))/(max(fall.data$gcc.90,na.rm=TRUE) - min(fall.data$gcc.90,na.rm=TRUE))
+  ratio_scale_NDVI = (max(rescaled_NDVI,na.rm=TRUE)-min(rescaled_NDVI,na.rm=TRUE))/(max(all.data$ndvi,na.rm=TRUE) - min(all.data$ndvi,na.rm=TRUE))
+  ratio_scale_GCC = (max(rescaled_GCC,na.rm=TRUE)-min(rescaled_GCC,na.rm=TRUE))/(max(all.data$gcc.mean,na.rm=TRUE) - min(all.data$gcc.mean,na.rm=TRUE))
   
   SS.years <- setdiff(years.with.data,current.year)
   n = max(table(time_year))
@@ -136,15 +142,15 @@ run.SS.model <- function(site.number){
   }
   
   # Make filename and save jags output 
-  file_name = paste('Jags.SS.out.site',as.character(site.number), 'RData',sep=".")
+  file_name = paste('Jags.SS.out.site',as.character(site.number),model,'RData',sep=".")
 #  save(jags.out.all.years.array, SS.years, file = file_name)
   save(out, SS.years, file = file_name)
   
   # Make plots
-#  make.SS.plots(jags.out.all.years.array,fall.data$date,
+#  make.SS.plots(jags.out.all.years.array,all.data$date,
 #                rescaled_NDVI,rescaled_GCC,site.number)
-  make.SS.plots(out,fall.data$date,
-              rescaled_NDVI,rescaled_GCC,site.number)
+  make.SS.plots(out,all.data$date,
+              rescaled_NDVI,rescaled_GCC,site.number,model)
 
 
   

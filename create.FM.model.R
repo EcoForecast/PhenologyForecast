@@ -14,9 +14,12 @@ create.FM.model <- function(site.number){
   time = model.start.DOY:365  
   
   num.ensembles = global_input_parameters$num.ensembles
+
+  model = global_input_parameters$model
+  
   
   ### read in output from State Space Model for X and r
-  file_name = paste('Jags.SS.out.site',as.character(site.number), 'RData',sep=".")
+  file_name = paste('Jags.SS.out.site',as.character(site.number),model, 'RData',sep=".")
   load(file_name)
   # There are now two new variables loaded: 
   # SS.years is a vector of the years of the SS model
@@ -48,13 +51,13 @@ create.FM.model <- function(site.number){
   print(paste("Forecasting for initial particle filter for site",
               as.character(site.number)))
   source("SSLPM.R")
-  if(global_input_parameters$model == "LogitRandomWalk"){
+  if(model == "LogitRandomWalk"){
     for(t in 2:length(time)){
       X[t,] = pmax(0,pmin(1,
                           rnorm(num.ensembles,X[t-1,],sample(sigma_add,num.ensembles))))
     }
   } else {
-    print(paste("Forecast for model not supported::",global_input_parameters$model))   
+    print(paste("Forecast for model not supported::",model))   
   }
   ##### end of forecast loop
   print("Initial forecasting complete.")
@@ -68,7 +71,7 @@ create.FM.model <- function(site.number){
   
   ### save output (not sure if we want to save all of it... maybe just the most recent day's?)
   dir.create("forecastRData",recursive=TRUE,showWarnings=FALSE) # doesn't do anything if already created
-  output_file_name = paste0("forecastRData/",paste("ForecastModel.X.out.site", as.character(site.number),date.string,
+  output_file_name = paste0("forecastRData/",paste("ForecastModel.X.out.site", as.character(site.number),model,date.string,
                            "RData",sep="."))
   save(X,file = output_file_name)
   
@@ -83,7 +86,7 @@ create.FM.model <- function(site.number){
   dir.create(dir.name,recursive=TRUE,showWarnings=FALSE) # doesn't do anything if already created
   
   ## name of output file
-  pdf_file_name = paste("ParticleFilterForecast",as.character(site.number),
+  pdf_file_name = paste("ParticleFilterForecast",as.character(site.number),model,
                     as.character(date.string),"pdf",sep=".")
   
   pdf(file=paste(dir.name,pdf_file_name,sep="/"))
@@ -103,7 +106,7 @@ create.FM.model <- function(site.number){
   print(sprintf("The particle filter forecast for site Num %.f is saved as %s",site.number,pdf_file_name))
   
   #### Save a file that contains the date of the last forecast:
-  last.date.filename <- paste("last.update.site", as.character(site.number), 
+  last.date.filename <- paste("last.update.site", as.character(site.number), model,
                               "txt",sep=".")
   sink(last.date.filename, append = FALSE)
   cat("\"",date.string,"\"",sep="")

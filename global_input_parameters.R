@@ -1,6 +1,8 @@
 global_input_parameters <- list(
   data.start.date = "2000-01-01", # the first day to look for phenocam and MODIS data
                                   # should be a january 1st
+  training.end.date = "2012-12-31",
+  season = "FALL",
   model.start.DOY = 182, # the day of year that our model uses to define the begining of fall phenology
   number.of.SS.model.iterations = 2500, # the number of iterations per chain used in JAGS for the state-space models
   number.of.SS.model.chains = 3, # the number of chains used in JAGS for the state-space model

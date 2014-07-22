@@ -68,11 +68,48 @@ RunJAGS <- function(data,n.iter,n.chains){
   tau_add ~ dgamma(a_add,r_add)  
 }"
   
+RandomWalk= "
+  model{
+  for(yr in 1:ny){
+  
+  #### Data Model: NDVI
+  for(i in 1:n){
+  y[yr,i] ~ dnorm(x[yr,i],tau_ndvi)
+  }
+  
+  #### Data Model: GCC
+  for(i in 1:n){
+  z[yr,i] ~ dnorm(x[yr,i],tau_gcc)
+  }
+  
+  #### Process Model
+  for(i in 2:n){
+  #        lcolor[yr,i] <- logit(x[yr,i-1])
+  #        color[yr,i]~dnorm(lcolor[yr,i],tau_add)
+  #        logit(x[i]) <- color[i]
+  lcolor[yr,i] ~ dnorm(x[yr,i-1],tau_add)
+  x[yr,i] <- min(1,max(0,lcolor[yr,i]))
+  }
+  
+  x[yr,1] ~ dnorm(x_ic,tau_ic)
+}  ## end loop over years
+  
+  #### Priors
+  tau_ndvi ~ dgamma(a_ndvi,r_ndvi)
+  tau_gcc ~ dgamma(a_gcc,r_gcc)
+  tau_add ~ dgamma(a_add,r_add)  
+  }"
   
   ModisGCCModel = switch(model,
                          LogisticGrowth = LogisticGrowth,
                          LogitRandomWalk = LogitRandomWalk)
   
+  ## for some models, data needs to be a vector
+  if(model %in% "RandomWalk"){
+    data$y = as.vector(t(data$y))
+    data$z = as.vector(t(data$z))
+  }
+
   ## JAGS initial conditions
   init <- list()
   for(i in 1:n.chains){
