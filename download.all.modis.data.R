@@ -65,22 +65,22 @@ download.all.modis.data <- function(site.number) {
                Size=c(1,1), SaveDir = ".", StartDate=TRUE)
   }else{
     if(havePEcAn){
-      doy = call_MODIS("./MODIS",paste0(site.number,".DOY.nc"),start = start.date,end = end.date,
+      doy = download.MODIS("./MODIS",paste0(site.number,".DOY.nc"),start = start.date,end = end.date,
                  lat = site.lat,lon=site.lon,product="MOD09A1",band="sur_refl_day_of_year")
 
-      qc = call_MODIS("./MODIS",paste0(site.number,".qc.nc"),start = start.date,end = end.date,
+      qc = download.MODIS("./MODIS",paste0(site.number,".qc.nc"),start = start.date,end = end.date,
                          lat = site.lat,lon=site.lon,product="MOD09A1",band="sur_refl_qc_500m")
       
-      state = call_MODIS("./MODIS",paste0(site.number,".state.nc"),start = start.date,end = end.date,
+      state = download.MODIS("./MODIS",paste0(site.number,".state.nc"),start = start.date,end = end.date,
                        lat = site.lat,lon=site.lon,product="MOD09A1",band="sur_refl_state_500m")
 
-      vzen = call_MODIS("./MODIS",paste0(site.number,".vzen.nc"),start = start.date,end = end.date,
+      vzen = download.MODIS("./MODIS",paste0(site.number,".vzen.nc"),start = start.date,end = end.date,
                          lat = site.lat,lon=site.lon,product="MOD09A1",band="sur_refl_vzen")
       
-      b01 = call_MODIS("./MODIS",paste0(site.number,".b01.nc"),start = start.date,end = end.date,
+      b01 = download.MODIS("./MODIS",paste0(site.number,".b01.nc"),start = start.date,end = end.date,
                         lat = site.lat,lon=site.lon,product="MOD09A1",band="sur_refl_b01")
 
-      b02 = call_MODIS("./MODIS",paste0(site.number,".b02.nc"),start = start.date,end = end.date,
+      b02 = download.MODIS("./MODIS",paste0(site.number,".b02.nc"),start = start.date,end = end.date,
                        lat = site.lat,lon=site.lon,product="MOD09A1",band="sur_refl_b02")
       
       site.data = list(date=doy$date,qc=unlist(qc$m),doy = unlist(doy$m),state = unlist(state$m),vzen=unlist(vzen$m),b01=unlist(b01$m),b02=unlist(b02$m))
@@ -91,4 +91,20 @@ download.all.modis.data <- function(site.number) {
   }
   
     
+}
+
+download.MODIS <- function(outfolder,outfile,start.date,end.date, lat, lon,product,band){
+  require(ncdf4)
+  if(file.exists(paste0(outfolder,"/",outfile))){
+    nc = nc_open(paste0(outfolder,"/",outfile))
+    m  = as.list(ncvar_get(nc,"LAI"))
+    k  = as.list(ncvar_get(nc,"LAIStd"))
+    date = ncvar_get(nc,"Dates")
+    nc_close(nc)
+    return(list(m=m, k=k, date=date))
+  } else {
+    foo = call_MODIS(outfolder,outfile,start = start.date,end = end.date,
+               lat = site.lat,lon=site.lon,product=product,band=band)
+    return(foo)
+  }
 }
