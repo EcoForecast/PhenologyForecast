@@ -27,7 +27,7 @@ create.FM.model <- function(site.number){
   # initial conditions for X
   X.bar = median(out$ci[,1,2])
   X.sd  = diff(range(out$ci[,1,]))/(1.96*2)
-  X.ic = rnorm(num.ensembles,X.bar,X.sd)
+  X.ic =  pmax(0,pmin(1,rnorm(num.ensembles,X.bar,X.sd)))
     
   ### Analysis step:
   # No data! So none to be done yet!
@@ -90,7 +90,7 @@ create.FM.model <- function(site.number){
   
   ## plot forecast:
   plot(time,X.ci[2,],type='n',main=paste("Particle Filter Forecast:",date.string)
-       ,xlab="Day of Year",ylab="Pheno-state",ylim=c(0,1))
+       ,xlab="Day of Year",ylab="Pheno-state",ylim=c(0,1.2))
   source("ciEnvelope.R")
   ciEnvelope(time,X.ci[1,],X.ci[3,],col="light grey")
   lines(time,X.ci[2,],main=paste("Particle Filter Forecast:",date.string)

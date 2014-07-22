@@ -134,8 +134,8 @@ update.FM.model <- function(site.number) {
         # Forecast!
         if(global_input_parameters$model == "LogitRandomWalk"){
           for(t in (output.index+1):output.days){
-#                X[t,] = pmax(0,pmin(1,rnorm(num.ensembles,X[t-1,],proc.stdev)))
-                X[t,] = rnorm(num.ensemble,X[t-1,],proc.stdev)
+                X[t,] = pmax(0,pmin(1,rnorm(num.ensemble,X[t-1,],proc.stdev)))
+#                X[t,] = rnorm(num.ensemble,X[t-1,],proc.stdev)
             }
         } else {
             print(paste("Forecast for model not supported::",global_input_parameters$model))   

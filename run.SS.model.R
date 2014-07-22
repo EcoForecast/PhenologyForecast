@@ -4,6 +4,7 @@ run.SS.model <- function(site.number){
   source("find.extreme.GCC.NDVI.R")
   source("RunJAGS.R")
   source("make.SS.plots.R")
+  require(plyr)
   
   # load site gcc and ndvi data:
   gcc.filename <- sprintf("gcc_data_site%i.csv",site.number)
@@ -86,7 +87,7 @@ run.SS.model <- function(site.number){
                  a_add=a_add, r_add=r_add,ny = nrow(y))
     
   # run JAGS model 
-  jags.out=RunJAGS(data,n.iter,n.chains,"LogitRandomWalk")
+  jags.out=RunJAGS(data,n.iter,n.chains)
   jags.out.matrix <- as.matrix(jags.out)
     
   is.x = grep(pattern = "x[",x = colnames(jags.out.matrix),fixed = TRUE)

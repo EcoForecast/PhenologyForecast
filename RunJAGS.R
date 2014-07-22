@@ -52,10 +52,11 @@ RunJAGS <- function(data,n.iter,n.chains){
   
     #### Process Model
     for(i in 2:n){
-      #  lcolor[i] <- logit(x[i-1])
-      #  color[i]~dnorm(lcolor[i],tau_add)
-      #  logit(x[i]) <- color[i]
-      x[yr,i] ~ dnorm(x[yr,i-1],tau_add)
+#        lcolor[yr,i] <- logit(x[yr,i-1])
+#        color[yr,i]~dnorm(lcolor[yr,i],tau_add)
+#        logit(x[i]) <- color[i]
+      lcolor[yr,i] ~ dnorm(x[yr,i-1],tau_add)
+      x[yr,i] <- min(1,max(0,lcolor[yr,i]))
     }
 
     x[yr,1] ~ dnorm(x_ic,tau_ic)
