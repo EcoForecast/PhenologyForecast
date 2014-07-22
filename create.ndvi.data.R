@@ -74,7 +74,7 @@ create.ndvi.data <- function(site.number,useMODISTools = FALSE){
   
   # Finally, remove any dates from the future (there are some of these...)
   MODIS_DATA_ST <- as.data.frame(subset.data.frame(MODIS_DATA_ST,
-                                                   MODIS_DATA_ST$date > (Sys.Date()+1)))
+                                                   as.Date(MODIS_DATA_ST$date) < (Sys.Date()+1)))
   
   
   # Create a vector of possible data observation dates

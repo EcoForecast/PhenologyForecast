@@ -2,7 +2,6 @@ download.all.modis.data <- function(site.number) {
   # Downloads all of the modis data for the site site.number
   
   source("global_input_parameters.R") # For burn-in
-  model = global_input_parameters$model
   useMODISTools = global_input_parameters$useMODISTools
   
   # Load some required packages:
