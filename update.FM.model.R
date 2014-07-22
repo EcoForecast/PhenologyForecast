@@ -17,9 +17,10 @@ update.FM.model <- function(site.number) {
   current.year <- strftime(Sys.Date(),"%Y")
   source("global_input_parameters.R")
   model.start.DOY <- global_input_parameters$model.start.DOY
+  model = global_input_parameters$model
   
   ##### get the date of the last forecast:
-  last.date.filename <- paste("last.update.site", as.character(site.number), 
+  last.date.filename <- paste("last.update.site", as.character(site.number), model,
                               "txt",sep=".")
   read.in <- source(last.date.filename)
   last.forecast.date <- as.Date(read.in$value)
@@ -57,7 +58,7 @@ update.FM.model <- function(site.number) {
   all.data$gcc.max <- (all.data$gcc.max - gcc_min)/(gcc_max - gcc_min)  
   
   # load the forecast model output:
-  output_file_name = paste0("forecastRData/",paste("ForecastModel.X.out.site", as.character(site.number),last.forecast.date, 
+  output_file_name = paste0("forecastRData/",paste("ForecastModel.X.out.site", as.character(site.number),model,last.forecast.date, 
                            "RData",sep="."))
   load(output_file_name)
   
@@ -70,7 +71,7 @@ update.FM.model <- function(site.number) {
   
   # Get standard deviations for measurement error from tau_gcc and tau_ndvi from
   # our state-space model
-  file_name = paste('Jags.SS.out.site',as.character(site.number), 'RData',sep=".")
+  file_name = paste('Jags.SS.out.site',as.character(site.number), model,'RData',sep=".")
   load(file_name)
   out$parms = as.data.frame(out$parms)
   
@@ -90,7 +91,7 @@ update.FM.model <- function(site.number) {
     # Keep this break statement floating at the top of the repeat loop:
     if(forecast.date > current.date) {break} # This will end the loop
     
-    print(paste("Running particle filter for",forecast.date,"at site",site.number))
+    print(paste("Running particle filter for",forecast.date,"at site",site.number,model))
     todays.data <- all.data[as.Date(all.data$date) == forecast.date,]
     new.data <- !(is.na(todays.data$gcc.90) & is.na(todays.data$ndvi)) # TRUE/FALSE
     
@@ -132,13 +133,13 @@ update.FM.model <- function(site.number) {
       # as long as we're not at the end of the year:
       if(forecast.date < as.Date(paste(current.year,"12-31",sep="-"))) {
         # Forecast!
-        if(global_input_parameters$model == "LogitRandomWalk"){
+        if(model == "LogitRandomWalk"){
           for(t in (output.index+1):output.days){
                 X[t,] = pmax(0,pmin(1,rnorm(num.ensemble,X[t-1,],proc.stdev)))
 #                X[t,] = rnorm(num.ensemble,X[t-1,],proc.stdev)
             }
         } else {
-            print(paste("Forecast for model not supported::",global_input_parameters$model))   
+            print(paste("Forecast for model not supported::",model))   
         }
       }        
 
@@ -152,7 +153,7 @@ update.FM.model <- function(site.number) {
       dir.name <- paste("pdfs/site",as.character(site.number),sep="") 
 
       ## name of output file
-      pdf.file.name = paste("ParticleFilterForecast",as.character(site.number),
+      pdf.file.name = paste("ParticleFilterForecast",as.character(site.number),model,
                             as.character(forecast.date),"pdf",sep=".")
       
       
@@ -186,7 +187,7 @@ update.FM.model <- function(site.number) {
       dev.off()
 
       ## also output in png for the webpage
-    png.file.name = paste("ParticleFilterForecast",as.character(site.number),
+    png.file.name = paste("ParticleFilterForecast",as.character(site.number),model,
                       as.character(forecast.date),"png",sep=".")
     png(file=paste("png",png.file.name,sep="/"))
 
@@ -205,13 +206,13 @@ update.FM.model <- function(site.number) {
       #### append output to pdf files that were created in the forecast model:
 
       # Save the most recent output data to file:
-      output_file_name = paste0("forecastRData/",paste("ForecastModel.X.out.site", as.character(site.number),forecast.date,
+      output_file_name = paste0("forecastRData/",paste("ForecastModel.X.out.site", as.character(site.number),model,forecast.date,
                          "RData",sep="."))
       save(X,file=output_file_name)   
 
       # Write the last forecast date to file:
       date.string <- as.character(last.date.assimilated)
-      last.date.filename <- paste("last.update.site", as.character(site.number), 
+      last.date.filename <- paste("last.update.site", as.character(site.number),model, 
                             "txt",sep=".")
       sink(last.date.filename, append = FALSE)
       cat("\"",date.string,"\"",sep="")

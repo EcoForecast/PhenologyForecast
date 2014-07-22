@@ -1,5 +1,5 @@
 make.SS.plots <- function(out,time,
-                          rescaled_NDVI,rescaled_GCC,site.number){
+                          rescaled_NDVI,rescaled_GCC,site.number,model){
   source("ciEnvelope.R")
   
   time_year = as.numeric(format(as.Date(time), "%Y"))
@@ -7,7 +7,7 @@ make.SS.plots <- function(out,time,
   years <- unique(time_year)
   years <- years[years != current.year]
  
-  plot_file_name = paste('Jags.SS.out.site',as.character(site.number), 'pdf',sep=".")
+  plot_file_name = paste('Jags.SS.out.site',as.character(site.number), model,'pdf',sep=".")
   
   pdf(plot_file_name)
   
