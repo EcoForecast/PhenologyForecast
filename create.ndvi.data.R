@@ -85,8 +85,9 @@ create.ndvi.data <- function(site.number,useMODISTools = FALSE){
   daily.dates = seq(start.date, end.date, by="days")
   
   # Finds indices of dates of modis data that are observed (and match possible_days)
-  days.with.modis.data = match(as.Date(as.character(MODIS_DATA_ST$date),format="%Y%j"),daily.dates)
-  
+  days.with.modis.data = match(as.Date(as.character(MODIS_DATA_ST$date)),daily.dates)
+  days.with.modis.data = days.with.modis.data[!is.na(days.with.modis.data)] 
+ 
   # make time series vector of modis data, the same length as daily.dates
   ndvi = rep(NA,length(daily.dates))
   ndvi[days.with.modis.data] = MODIS_DATA_ST$ndvi
