@@ -116,7 +116,7 @@ create.FM.model <- function(site.number,current.year = as.numeric(format(Sys.Dat
   source("ForecastThreshold.R")
   p = matrix(NA,nrow(X),5)
   png.file.name = paste("ThresholdForecast",as.character(site.number),model,
-                      as.character(forecast.date),"png",sep=".")
+                      as.character(date.string),"png",sep=".")
   png(file=paste("png",png.file.name,sep="/"))
   p[1,] = ForecastThreshold(X)
   dev.off()
