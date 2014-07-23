@@ -1,4 +1,4 @@
-update.FM.model <- function(site_num) {
+update.FM.model <- function(site.number) {
   # The function update.FM.model updates an already existing particle filter
   # forecast model. It first checks for new data, then assimilates that data into
   # that forecast using a resampling particle filter. Outputs are generated one day
@@ -14,22 +14,32 @@ update.FM.model <- function(site_num) {
   source("ciEnvelope.R")
   source("find.extreme.GCC.NDVI.R")
   
-  current.year <- strftime(Sys.Date(),"%Y")
   source("global_input_parameters.R")
   model.start.DOY <- global_input_parameters$model.start.DOY
+  model = global_input_parameters$model
   
   ##### get the date of the last forecast:
-  last.date.filename <- paste("last.update.site", as.character(site_num), 
+  last.date.filename <- paste("last.update.site", as.character(site.number), model,
                               "txt",sep=".")
   read.in <- source(last.date.filename)
   last.forecast.date <- as.Date(read.in$value)
   last.date.assimilated <- last.forecast.date
+  current.year = as.numeric(strftime(last.date.assimilated,"%Y"))
+  print(last.date.assimilated) 
+
+  #current.year <- strftime(Sys.Date(),"%Y")
+  if(!is.null(global_input_parameters$training.end.date)){
+    start.year = (as.numeric(strftime(global_input_parameters$training.end.date,"%Y"))+1)
+  } else {
+    start.year = current.year
+  }
+  
   
   # load the GCC data:
-  gcc.data <- read.csv( sprintf("gcc_data_site%i.csv",site_num) )
+  gcc.data <- read.csv( sprintf("gcc_data_site%i.csv",site.number) )
   
   # load the NDVI data:
-  ndvi.data <- read.csv( sprintf("ndvi_data_site%i.csv",site_num) )
+  ndvi.data <- read.csv( sprintf("ndvi_data_site%i.csv",site.number) )
   
   # Merge them:
   all.data <- merge(gcc.data,ndvi.data)
@@ -39,8 +49,8 @@ update.FM.model <- function(site_num) {
   # outputs (ndvi_max,ndvi_min,gcc_max,gcc_min)
   first.year <- as.numeric(strftime(global_input_parameters$data.start.date, "%Y"))
   
-  max_min_ndvi_gcc = find.extreme.GCC.NDVI(site_num, first.year, 
-                                           as.numeric(current.year)-1, 
+  max_min_ndvi_gcc = find.extreme.GCC.NDVI(site.number, first.year, 
+                                           as.numeric(start.year)-1, 
                                            use.interannual.means=TRUE)
   ndvi_max = max_min_ndvi_gcc[1]
   ndvi_min = max_min_ndvi_gcc[2]
@@ -57,63 +67,68 @@ update.FM.model <- function(site_num) {
   all.data$gcc.max <- (all.data$gcc.max - gcc_min)/(gcc_max - gcc_min)  
   
   # load the forecast model output:
-  output_file_name = paste("ForecastModel.X.out.site", as.character(site_num),
-                           "RData",sep=".")
-  load(output_file_name) # loads a num.days x num.ensemble x 2 array called output
+  output_file_name = paste0("forecastRData/",paste("ForecastModel.X.out.site", as.character(site.number),model,last.forecast.date, 
+                           "RData",sep="."))
+  load(output_file_name)
+
+  print(output_file_name)
   
   # Number of ensemble members:
-  num.ensemble <- dim(output)[2]
+  num.ensemble <- global_input_parameters$num.ensembles
   
   forecast.date <- last.forecast.date + 1
   
   current.date <- Sys.Date()
   
   # Get standard deviations for measurement error from tau_gcc and tau_ndvi from
-  # our state-space model for now?
-  file_name = paste('Jags.SS.out.site',as.character(site_num), 'RData',sep=".")
+  # our state-space model
+  file_name = paste('Jags.SS.out.site',as.character(site.number), model,'RData',sep=".")
   load(file_name)
-  # get the median precisions from the state space model output, convert to stdevs:
-  tau.gcc.all <- jags.out.all.years.array[,3,] # num.ensemble members x num.years  
-  gcc.stdev <- 1/sqrt(median(as.vector(tau.gcc.all)))
-  tau.ndvi.all <- jags.out.all.years.array[,4,] # num.ensemble members x num.years  
-  ndvi.stdev <- 1/sqrt(median(as.vector(tau.ndvi.all)))
+  print(file_name)
+  out$parms = as.data.frame(out$parms)
   
-  #### process error: 
-  # Get process error from the SS model output (tau_add):
-  tau.add.all <- jags.out.all.years.array[,2,] # num.ensemble members x num.years  
-  process.stdev <- 1/sqrt(median(as.vector(tau.add.all)))
+  # get the precisions from the state space model output, convert to stdevs:
+  gcc.stdev <- 1/sqrt(out$parms$tau_gcc)
+  ndvi.stdev <- 1/sqrt(out$parms$tau_ndvi)
+  proc.stdev <- 1/sqrt(out$parms$tau_add)  
   
+  ## for now, lets work with the median value for all std deviations
+  ## will look into accomodating their uncertainty in the future
+  gcc.stdev  = median(gcc.stdev)
+  ndvi.stdev = median(ndvi.stdev)
+  proc.stdev = median(proc.stdev)
   
+  print(forecast.date)
+
   # while loop until you get to the present day:
   repeat{
     # Keep this break statement floating at the top of the repeat loop:
-    if(forecast.date > current.date) {break} # This will end the loop
+    if(forecast.date > current.date | as.numeric(strftime(forecast.date,"%Y")) > current.year) {break} # This will end the loop
     
-    print(paste("Running particle filter for",forecast.date,"at site",site_num))
+    print(paste("Running particle filter for",forecast.date,"at site",site.number,model))
     todays.data <- all.data[as.Date(all.data$date) == forecast.date,]
     new.data <- !(is.na(todays.data$gcc.90) & is.na(todays.data$ndvi)) # TRUE/FALSE
     
     # Only need to do anything when there is new data
     if(new.data) {
       
-      # Let's get today's incoming X and r values:
-      output.days <- dim(output)[1]
+      # Let's get today's incoming X values:
+      output.days <- nrow(X)
       output.index <- output.days - as.numeric(as.Date(paste(current.year,"12-31",sep="-")) - forecast.date,
-                                               unit="days")
-      X <- output[output.index,,1] # vector
-      r <- output[output.index,,2] # vector
+                                               unit="days")     
+      Xf = X[output.index,]
       
       #### Analysis step:
       # Calculate the likelihood of our ensemble members given the data:
       if(is.na(todays.data$ndvi)){
-        likelihood.ndvi <- rep(0,3000) # no likelihood if no data...
+        log.likelihood.ndvi <- rep(0,num.ensemble) # no likelihood if no data...
       } else {
-        log.likelihood.ndvi <- dnorm(X,todays.data$ndvi,ndvi.stdev,log=TRUE)
+        log.likelihood.ndvi <- dnorm(Xf,todays.data$ndvi,ndvi.stdev,log=TRUE)
       }
       if(is.na(todays.data$gcc.90)){
-        likelihood.gcc <- rep(0,3000) # no likelihood if no data...
+        log.likelihood.gcc <- rep(0,num.ensemble) # no likelihood if no data...
       } else {
-        log.likelihood.gcc <- dnorm(X,todays.data$gcc.90,gcc.stdev,log=TRUE)
+        log.likelihood.gcc <- dnorm(Xf,todays.data$gcc.mean,gcc.stdev,log=TRUE)
       }
       likelihood <- exp(log.likelihood.gcc + log.likelihood.ndvi)
       
@@ -126,35 +141,46 @@ update.FM.model <- function(site_num) {
       #### Resampling step:
       index = sample.int(num.ensemble, num.ensemble, replace = TRUE, prob = likelihood)
       # replace our previous guess with the PF output:
-      output[output.index,,1] = X[index] # or maybe pmin(1,pmax(0,X[index]
-      output[output.index,,2] = r[index]       
+      X[output.index,] = X[output.index,index] #pmin(1,pmax(0,X[output.index,index]))
+      if(length(params)>0){ 
+        for(i in 1:length(params)){
+          params[[i]] = params[[i]][index]
+        }
+      }
       
       #### Forecast step:
       # as long as we're not at the end of the year:
       if(forecast.date < as.Date(paste(current.year,"12-31",sep="-"))) {
         # Forecast!
-        for(t in (output.index+1):output.days){
-          X = output[t-1,,1]
-          r = output[t-1,,2]
-          ## forward step
-          output[t,,] = SSLPM(X,r) # num.ensembles x 2
-          
-          # Add the process error to the state estimate:
-          output[t,,1] = output[t,,1] + rnorm(num.ensemble,0,process.stdev)
-        }        
-      }
+        if(model == "LogitRandomWalk"){
+          for(t in (output.index+1):output.days){
+                X[t,] = pmax(0,pmin(1,rnorm(num.ensemble,X[t-1,],proc.stdev)))
+#                X[t,] = rnorm(num.ensemble,X[t-1,],proc.stdev)
+            }
+        } else if (model == "Threshold_Day_Logistic"){
+          k = params$k
+          r = params$r
+          for(t in (output.index+1):output.days){
+            mu = ifelse(t>k,X[t-1,]-r*X[t-1,]*(1-X[t-1,]),1)
+            X[t,] = pmax(0,pmin(1,
+                      rnorm(num.ensemble,mu,proc.stdev)))
+          }
+        } else {
+            print(paste("Forecast for model not supported::",model))   
+        }
+      }        
+
       ##### end of forecast loop
       
       # Plot the forecast!      
-      X.mat = output[,,1]
-      X.ci  = apply(X.mat,1,quantile,c(0.025,0.5,0.975))
+      X.ci  = apply(X,1,quantile,c(0.025,0.25,0.5,0.75,0.975))
       
       #### save plot produced to PDF
       ## name of output file
-      dir.name <- paste("pdfs/site",as.character(site_num),sep="")
-      
+      dir.name <- paste("pdfs/site",as.character(site.number),sep="") 
+
       ## name of output file
-      pdf.file.name = paste("ParticleFilterForecast",as.character(site_num),
+      pdf.file.name = paste("ParticleFilterForecast",as.character(site.number),model,
                             as.character(forecast.date),"pdf",sep=".")
       
       
@@ -171,26 +197,62 @@ update.FM.model <- function(site_num) {
       plottable.data <- subset(plottable.data,
                                as.Date(plottable.data$date) >= model.start.DOY)
       
-      plot(model.start.DOY:365,X.ci[2,],type='n',
+      plot(model.start.DOY:365,X.ci[3,],type='n',
            main=paste("Particle Filter Forecast:",forecast.date),
            xlab="Day of Year",ylab="Pheno-state",ylim=c(0,1.2))
-      ciEnvelope(model.start.DOY:365,X.ci[1,],X.ci[3,],col="light grey")
-      lines(model.start.DOY:365,X.ci[2,],
+      ciEnvelope(model.start.DOY:365,X.ci[1,],X.ci[5,],col="light grey")
+      ciEnvelope(model.start.DOY:365,X.ci[2,],X.ci[4,],col="grey")
+      lines(model.start.DOY:365,X.ci[3,],
             main=paste("Particle Filter Forecast:",forecast.date),
             xlab="Day of Year",ylab="Pheno-state")
       
       non.leap.year.doys <- as.numeric(strftime(plottable.data$date,"%j")) - (as.numeric(current.year)%%4 == 0)
       points(non.leap.year.doys, plottable.data$ndvi, pch="+",cex=0.8)
-      points(non.leap.year.doys, plottable.data$gcc.90, pch="o",cex=0.5)
+      points(non.leap.year.doys, plottable.data$gcc.mean, pch="o",cex=0.5)
       
       
       ## ends plot output to PDF
       dev.off()
-      
-      
-      
+
+      ## also output in png for the webpage
+    png.file.name = paste("ParticleFilterForecast",as.character(site.number),model,
+                      as.character(forecast.date),"png",sep=".")
+    png(file=paste("png",png.file.name,sep="/"),width=1000,height=1000)
+
+    plot(model.start.DOY:365,X.ci[3,],type='n',
+       main=paste("Particle Filter Forecast:",forecast.date),
+       xlab="Day of Year",ylab="Pheno-state",ylim=c(0,1.2))
+    ciEnvelope(model.start.DOY:365,X.ci[1,],X.ci[5,],col="light grey")
+    ciEnvelope(model.start.DOY:365,X.ci[2,],X.ci[4,],col="grey")
+    lines(model.start.DOY:365,X.ci[3,],
+        main=paste("Particle Filter Forecast:",forecast.date),
+        xlab="Day of Year",ylab="Pheno-state")
+    points(non.leap.year.doys, plottable.data$ndvi, pch="+",cex=0.8)
+    points(non.leap.year.doys, plottable.data$gcc.mean, pch="o",cex=0.5)
+
+    dev.off()
+
+    source("ForecastThreshold.R")
+    png.file.name = paste("ThresholdForecast",as.character(site.number),model,
+                      as.character(forecast.date),"png",sep=".")
+    png(file=paste("png",png.file.name,sep="/"),width=1000,height=1000)
+    p[output.index,] = ForecastThreshold(X)
+    dev.off()
+
       #### append output to pdf files that were created in the forecast model:
-      
+
+      # Save the most recent output data to file:
+      output_file_name = paste0("forecastRData/",paste("ForecastModel.X.out.site", as.character(site.number),model,forecast.date,
+                         "RData",sep="."))
+      save(X,params,p,file=output_file_name)   
+
+      # Write the last forecast date to file:
+      date.string <- as.character(last.date.assimilated)
+      last.date.filename <- paste("last.update.site", as.character(site.number),model, 
+                            "txt",sep=".")
+      sink(last.date.filename, append = FALSE)
+      cat("\"",date.string,"\"",sep="")
+      sink()  
       
       # This is important as it is the date to save in the file tracking the last 
       # date assimilated
@@ -202,17 +264,6 @@ update.FM.model <- function(site_num) {
     forecast.date <- forecast.date + 1    
   }
   
-  # Save the most recent output data to file:
-  
-  
-  
-  
-  # Write the last forecast date to file:
-  date.string <- as.character(last.date.assimilated)
-  last.date.filename <- paste("last.update.site", as.character(site_num), 
-                              "txt",sep=".")
-  sink(last.date.filename, append = FALSE)
-  cat("\"",date.string,"\"",sep="")
-  sink()  
+
   
 }

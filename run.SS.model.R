@@ -1,13 +1,14 @@
-run.SS.model <- function(site_num){
+run.SS.model <- function(site.number){
   
   # source functions
   source("find.extreme.GCC.NDVI.R")
   source("RunJAGS.R")
   source("make.SS.plots.R")
+  require(plyr)
   
   # load site gcc and ndvi data:
-  gcc.filename <- sprintf("gcc_data_site%i.csv",site_num)
-  ndvi.filename <- sprintf("ndvi_data_site%i.csv",site_num)
+  gcc.filename <- sprintf("gcc_data_site%i.csv",site.number)
+  ndvi.filename <- sprintf("ndvi_data_site%i.csv",site.number)
   gcc.data <- read.csv(gcc.filename)
   ndvi.data <- read.csv(ndvi.filename)
   
@@ -16,24 +17,33 @@ run.SS.model <- function(site_num){
   all.data <- merge(gcc.data,ndvi.data)
   
   # Throw out years with no data!
-  no.data.vec <- is.na(all.data$gcc.90) & is.na(all.data$ndvi) # TRUE/FALSE vector of na locations
+  no.data.vec <- is.na(all.data$gcc.mean) & is.na(all.data$ndvi) # TRUE/FALSE vector of na locations
   years <- as.numeric(strftime(all.data$date, "%Y"))
   years.with.data <- unique(years[!no.data.vec])
   all.data <- subset(all.data, years %in% years.with.data )
   current.year <- as.numeric(strftime(Sys.Date(), "%Y"))
+  if(!is.null(global_input_parameters$training.end.date)){
+    current.year = (as.numeric(strftime(global_input_parameters$training.end.date,"%Y"))+1):current.year
+  }
   
   # Define fall dates:
   source("global_input_parameters.R")
   first.day.of.season <- global_input_parameters$model.start.DOY 
   day.of.year <- as.numeric( strftime(all.data$date, format="%j") ) # a vector of the DOY for each date
+  model = global_input_parameters$model
   
   # We are only going to use the fall data:
   fall.days <- (day.of.year >= first.day.of.season) & (day.of.year < 366) # solves the leap year problem
-  fall.data = all.data[fall.days,]
-  
+  if(global_input_parameters$season == "FALL"){
+    all.data = all.data[fall.days,]
+  } else {
+    if(global_input_parameters$season == "SPRING"){
+      all.data = all.data[!fall.days,]
+    }
+  }
   ## build data object for JAGS in year loop. 
   # pull out time, get year for each data point. 
-  time = fall.data$date
+  time = all.data$date
   time_year = as.numeric(format(as.Date(time), "%Y"))
   
   
@@ -45,14 +55,9 @@ run.SS.model <- function(site_num){
   num.years.data <- length(unique(time_year)) # number of years (including the current
   # year which won't go into the SS model)
   
-  # output parameters: [r  tau_add	tau_gcc	tau_ndvi	x], x will use (366-first.day.of.season columns)
-  jags.out.all.years.array = array(rep(NA, n.iter*n.chains*(4+366-first.day.of.season)*(num.years.data-1)),
-                                   c(n.iter*n.chains,(4+366-first.day.of.season),(num.years.data-1))) 
-  
-  
   # find max/min of ndvi and gcc over all years of record except current
   # outputs (ndvi_max,ndvi_min,gcc_max,gcc_min)
-  max_min_ndvi_gcc = find.extreme.GCC.NDVI(site_num, min(time_year), max(time_year)-1, 
+  max_min_ndvi_gcc = find.extreme.GCC.NDVI(site.number, min(time_year), max(time_year)-1, 
                                            use.interannual.means=TRUE)
   ndvi_max = max_min_ndvi_gcc[1]
   ndvi_min = max_min_ndvi_gcc[2]
@@ -60,18 +65,55 @@ run.SS.model <- function(site_num){
   gcc_min = max_min_ndvi_gcc[4]
   # Rescale data to be between 0 and 1 (using max and min NDVI, GCC values from 
   # all years except current year):
-  rescaled_NDVI <- (fall.data$ndvi-ndvi_min)/(ndvi_max-ndvi_min)
-  rescaled_GCC <- (fall.data$gcc.90-gcc_min)/(gcc_max-gcc_min) # using gcc90
+  rescaled_NDVI <- (all.data$ndvi-ndvi_min)/(ndvi_max-ndvi_min)
+  rescaled_NDVI[rescaled_NDVI < -0.3] = NA
+  rescaled_GCC <- (all.data$gcc.mean-gcc_min)/(gcc_max-gcc_min) # using gcc90
   
-  ratio_scale_NDVI = (max(rescaled_NDVI,na.rm=TRUE)-min(rescaled_NDVI,na.rm=TRUE))/(max(fall.data$ndvi,na.rm=TRUE) - min(fall.data$ndvi,na.rm=TRUE))
-  ratio_scale_GCC = (max(rescaled_GCC,na.rm=TRUE)-min(rescaled_GCC,na.rm=TRUE))/(max(fall.data$gcc.90,na.rm=TRUE) - min(fall.data$gcc.90,na.rm=TRUE))
+  ratio_scale_NDVI = (max(rescaled_NDVI,na.rm=TRUE)-min(rescaled_NDVI,na.rm=TRUE))/(max(all.data$ndvi,na.rm=TRUE) - min(all.data$ndvi,na.rm=TRUE))
+  ratio_scale_GCC = (max(rescaled_GCC,na.rm=TRUE)-min(rescaled_GCC,na.rm=TRUE))/(max(all.data$gcc.mean,na.rm=TRUE) - min(all.data$gcc.mean,na.rm=TRUE))
   
   SS.years <- setdiff(years.with.data,current.year)
+  n = max(table(time_year))
+  y = z = matrix(0.0,length(SS.years),n)
+  for (i in 1:length(SS.years)) { # loop over all years except current year
+    II = which(time_year == SS.years[i])
+    y[i,] = rescaled_NDVI[II]  # get ndvi just for ONE year
+    z[i,] = rescaled_GCC[II]    # get gcc just for ONE year
+  }
+  
+  # Make list of "data" to be used as input for RunJAGS
+  x_ic <- global_input_parameters$x_ic
+  tau_ic <- global_input_parameters$tau_ic
+  a_ndvi <- (global_input_parameters$a_ndvi)*ratio_scale_NDVI
+  r_ndvi <- global_input_parameters$r_ndvi
+  a_gcc <- global_input_parameters$a_gcc
+  r_gcc <- global_input_parameters$r_gcc
+  a_add <- (global_input_parameters$a_add)*ratio_scale_GCC
+  r_add <- global_input_parameters$r_add
+    
+  data <- list(y = y,z = z,n=n, x_ic=x_ic, tau_ic=tau_ic,
+                 a_ndvi=a_ndvi, r_ndvi=r_ndvi, a_gcc=a_gcc, r_gcc=r_gcc,
+                 a_add=a_add, r_add=r_add,ny = nrow(y))
+    
+  # run JAGS model 
+  jags.out=RunJAGS(data,n.iter,n.chains)
+  jags.out.matrix <- as.matrix(jags.out)
+    
+  is.x = grep(pattern = "x[",x = colnames(jags.out.matrix),fixed = TRUE)
+  x.out = array(t(jags.out.matrix[,is.x]),c(data$ny,data$n,nrow(jags.out.matrix)))
+  ci = aaply(x.out,1:2,function(x) quantile(x,c(0.025,0.5,0.975)))
+  out = list(parms = jags.out.matrix[,-is.x],ci=ci)
+
+  if(FALSE){
+    # output parameters: [r  tau_add  tau_gcc	tau_ndvi	x], x will use (366-first.day.of.season columns)
+    jags.out.all.years.array = array(rep(NA, n.iter*n.chains*(4+366-first.day.of.season)*(num.years.data-1)),
+                                     c(n.iter*n.chains,(4+366-first.day.of.season),(num.years.data-1))) 
+    
   # counts for loop                                     
   count = 0
   for (YR in SS.years) { # loop over all years except current year
     
-    cat(sprintf("Running state-space model for site %i, year %i\n\n",site_num,YR))
+    cat(sprintf("Running state-space model for site %i, year %i\n\n",site.number,YR))
     count = count + 1;
     # gets index of year
     II = which(time_year == YR)
@@ -97,16 +139,22 @@ run.SS.model <- function(site_num){
     jags.out=RunJAGS(data,n.iter,n.chains)
     jags.out.matrix <- as.matrix(jags.out)
     jags.out.all.years.array[,,count] <- jags.out.matrix
+
     
+  }
   }
   
   # Make filename and save jags output 
-  file_name = paste('Jags.SS.out.site',as.character(site_num), 'RData',sep=".")
-  save(jags.out.all.years.array, SS.years, file = file_name)
+  file_name = paste('Jags.SS.out.site',as.character(site.number),model,'RData',sep=".")
+#  save(jags.out.all.years.array, SS.years, file = file_name)
+  save(out, SS.years, file = file_name)
   
   # Make plots
-  make.SS.plots(jags.out.all.years.array,fall.data$date,
-                rescaled_NDVI,rescaled_GCC,site_num)
-  
+#  make.SS.plots(jags.out.all.years.array,all.data$date,
+#                rescaled_NDVI,rescaled_GCC,site.number)
+  make.SS.plots(out,all.data$date,
+              rescaled_NDVI,rescaled_GCC,site.number,model)
+
+
   
 }

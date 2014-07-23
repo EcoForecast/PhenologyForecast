@@ -2,9 +2,10 @@
 RunJAGS <- function(data,n.iter,n.chains){
   require(rjags)
   source("global_input_parameters.R") # For burn-in
+  model = global_input_parameters$model
   
   ##JAGS code
-  ModisGCCModel = "
+  LogisticGrowth = "
   model{
   #### Data Model: NDVI
   for(i in 1:n){
@@ -33,14 +34,123 @@ RunJAGS <- function(data,n.iter,n.chains){
                   # 0.148 is from Richardson et al. 2006.
 
   }"
-    
+  
+  Threshold_Day_Logistic= "
+  model{
+  for(yr in 1:ny){
+  
+  #### Data Model: NDVI
+  for(i in 1:n){
+  y[yr,i] ~ dnorm(x[yr,i],tau_ndvi)
+  }
+  
+  #### Data Model: GCC
+  for(i in 1:n){
+  z[yr,i] ~ dnorm(x[yr,i],tau_gcc)
+  }
+  
+  #### Process Model
+  for(i in 2:n){
+  color[yr,i] <- ifelse(i > k,x[yr,i-1] - r * x[yr,i-1] * (1-x[yr,i-1]),1 )
+  lcolor[yr,i] ~ dnorm(color[yr,i],tau_add)
+  x[yr,i] <- min(1,max(0,lcolor[yr,i]))
+  }
+  
+  x[yr,1] ~ dnorm(x_ic,tau_ic)
+}  ## end loop over years
+  
+  #### Priors
+  tau_ndvi ~ dgamma(a_ndvi,r_ndvi)
+  tau_gcc ~ dgamma(a_gcc,r_gcc)
+  tau_add ~ dgamma(a_add,r_add)  
+  r ~ dexp(0.148) # Exp is the maximum entropy distribution for constraints of positive with givn mean
+                  # 0.148 is from Richardson et al. 2006.
+  k ~ dunif(1,180)
+  }"
+  
+
+  LogitRandomWalk= "
+  model{
+  for(yr in 1:ny){
+
+    #### Data Model: NDVI
+    for(i in 1:n){
+      y[yr,i] ~ dnorm(x[yr,i],tau_ndvi)
+    }
+  
+    #### Data Model: GCC
+    for(i in 1:n){
+      z[yr,i] ~ dnorm(x[yr,i],tau_gcc)
+    }
+  
+    #### Process Model
+    for(i in 2:n){
+#        lcolor[yr,i] <- logit(x[yr,i-1])
+#        color[yr,i]~dnorm(lcolor[yr,i],tau_add)
+#        logit(x[i]) <- color[i]
+      lcolor[yr,i] ~ dnorm(x[yr,i-1],tau_add)
+      x[yr,i] <- min(1,max(0,lcolor[yr,i]))
+    }
+
+    x[yr,1] ~ dnorm(x_ic,tau_ic)
+  }  ## end loop over years
+
+  #### Priors
+  tau_ndvi ~ dgamma(a_ndvi,r_ndvi)
+  tau_gcc ~ dgamma(a_gcc,r_gcc)
+  tau_add ~ dgamma(a_add,r_add)  
+}"
+  
+RandomWalk= "
+  model{
+  for(yr in 1:ny){
+  
+  #### Data Model: NDVI
+  for(i in 1:n){
+  y[yr,i] ~ dnorm(x[yr,i],tau_ndvi)
+  }
+  
+  #### Data Model: GCC
+  for(i in 1:n){
+  z[yr,i] ~ dnorm(x[yr,i],tau_gcc)
+  }
+  
+  #### Process Model
+  for(i in 2:n){
+  #        lcolor[yr,i] <- logit(x[yr,i-1])
+  #        color[yr,i]~dnorm(lcolor[yr,i],tau_add)
+  #        logit(x[i]) <- color[i]
+  lcolor[yr,i] ~ dnorm(x[yr,i-1],tau_add)
+  x[yr,i] <- min(1,max(0,lcolor[yr,i]))
+  }
+  
+  x[yr,1] ~ dnorm(x_ic,tau_ic)
+}  ## end loop over years
+  
+  #### Priors
+  tau_ndvi ~ dgamma(a_ndvi,r_ndvi)
+  tau_gcc ~ dgamma(a_gcc,r_gcc)
+  tau_add ~ dgamma(a_add,r_add)  
+  }"
+  
+  ModisGCCModel = switch(model,
+                         LogisticGrowth = LogisticGrowth,
+                         LogitRandomWalk = LogitRandomWalk,
+                         Threshold_Day_Logistic = Threshold_Day_Logistic)
+  
+  ## for some models, data needs to be a vector
+  if(model %in% "RandomWalk"){
+    data$y = as.vector(t(data$y))
+    data$z = as.vector(t(data$z))
+  }
+
   ## JAGS initial conditions
   init <- list()
   for(i in 1:n.chains){
-    y.samp = sample(data$y,length(data$y),replace=TRUE)
+    #y.samp = sample(data$y,length(data$y),replace=TRUE)
     ########## what are the values for tau_ndvi and tau_gcc based on? is this reasonable?
-    init[[i]] <- list(x = rep(1,length(data$y)), 
-                      tau_add = runif(1,0,1)/var(diff(y.samp),na.rm=TRUE),
+    init[[i]] <- list(#x = rep(1,length(data$y)), 
+                      tau_add = runif(1,0.5,2),#runif(1,0,1)/var(diff(y.samp),na.rm=TRUE),
                       tau_ndvi = 10,tau_gcc=10)
   }
   
@@ -56,7 +166,7 @@ RunJAGS <- function(data,n.iter,n.chains){
   
   ## run MCMC
   jags.out   <- coda.samples (model = j.model,
-                              variable.names = c("x","tau_add","tau_ndvi","tau_gcc","r"),
+                              variable.names = c("x","tau_add","tau_ndvi","tau_gcc","r","k"),
                               n.iter = n.iter)
   return(jags.out)
 }

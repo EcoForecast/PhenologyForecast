@@ -1,18 +1,20 @@
 #!/bin/bash
 # Make gif animation out of plots:
+## arg 1 = model
+## arg 2 = year
 
-cd /var/www/ge585/PhenologyForecast/pdfs;
+cd pdfs;
 
 for d in site*
 do cd "$d";
 
-for f in *.pdf; 
+for f in *${1}*${2}*.pdf; 
 do 
-convert ./"$f" ./"${f%.pdf}.jpg"; 
+convert -size 1000x1000 ./"$f" ./"${f%.pdf}.jpg"; 
 done
 
-convert -delay 15 *.jpg -loop 0 Site"${d%.pdf}.gif";
+convert -delay 15 *.jpg -loop 0 Site"${d%.pdf}.${1}.${2}.gif";
 rm *.jpg;
-cd /var/www/ge585/PhenologyForecast/pdfs;
+cd ..;
 echo "Finished another site"
 done
