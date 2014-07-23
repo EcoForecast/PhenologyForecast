@@ -1,4 +1,4 @@
-create.FM.model <- function(site.number){
+create.FM.model <- function(site.number,current.year = as.numeric(format(Sys.Date(), "%Y"))){
   # The function create.FM.model takes output from the state space model and
   # makes an initial (data free) forecast through the end of the year.
   # The forecast is plotted in a pdf begining with ParticleFilterForecast,
@@ -10,7 +10,13 @@ create.FM.model <- function(site.number){
   source("global_input_parameters.R")
   model.start.DOY=global_input_parameters$model.start.DOY
   cur_date = Sys.Date()
-  current.year = as.numeric(format(Sys.Date(), "%Y"))
+  print(current.year)
+#  current.year = as.numeric(format(Sys.Date(), "%Y"))
+#  if(!is.null(global_input_parameters$training.end.date)){
+#    start.year = (as.numeric(strftime(global_input_parameters$training.end.date,"%Y"))+1)
+#  } else {
+#    start.year = current.year
+#  }
   time = model.start.DOY:365  
   
   num.ensembles = global_input_parameters$num.ensembles
@@ -51,12 +57,23 @@ create.FM.model <- function(site.number){
   print(paste("Forecasting for initial particle filter for site",
               as.character(site.number)))
   source("SSLPM.R")
-  if(model == "LogitRandomWalk"){
+  params = list()
+  if(model == "LogitRandomWalk"){    
     for(t in 2:length(time)){
       X[t,] = pmax(0,pmin(1,
                           rnorm(num.ensembles,X[t-1,],sample(sigma_add,num.ensembles))))
     }
-  } else {
+  } else if (model == "Threshold_Day_Logistic"){
+    k = sample(out$parms$k,num.ensembles)
+    r = sample(out$parms$r,num.ensembles)
+    params$k = k
+    params$r = r
+    for(t in 2:length(time)){
+      mu = ifelse(t>k,X[t-1,]-r*X[t-1,]*(1-X[t-1,]),1)
+      X[t,] = pmax(0,pmin(1,
+                          rnorm(num.ensembles,mu,sample(sigma_add,num.ensembles))))
+    }
+  } else{
     print(paste("Forecast for model not supported::",model))   
   }
   ##### end of forecast loop
@@ -68,12 +85,6 @@ create.FM.model <- function(site.number){
                               format="%m-%d"),sep="-") 
   # Complicated! But just a date string to put in the file name. For the create FM 
   # model it's the day BEFORE the first day of data.
-  
-  ### save output (not sure if we want to save all of it... maybe just the most recent day's?)
-  dir.create("forecastRData",recursive=TRUE,showWarnings=FALSE) # doesn't do anything if already created
-  output_file_name = paste0("forecastRData/",paste("ForecastModel.X.out.site", as.character(site.number),model,date.string,
-                           "RData",sep="."))
-  save(X,file = output_file_name)
   
   ## Plot our forecast!
   X.ci  = apply(X,1,quantile,c(0.025,0.5,0.975))
@@ -101,7 +112,21 @@ create.FM.model <- function(site.number){
   
   ## ends plot output to PDF
   dev.off()
+
+  source("ForecastThreshold.R")
+  p = matrix(NA,nrow(X),5)
+  png.file.name = paste("ThresholdForecast",as.character(site.number),model,
+                      as.character(forecast.date),"png",sep=".")
+  png(file=paste("png",png.file.name,sep="/"))
+  p[1,] = ForecastThreshold(X)
+  dev.off()
   
+  ### save output (not sure if we want to save all of it... maybe just the most recent day's?)
+  dir.create("forecastRData",recursive=TRUE,showWarnings=FALSE) # doesn't do anything if already created
+  output_file_name = paste0("forecastRData/",paste("ForecastModel.X.out.site", as.character(site.number),model,date.string,
+                                                 "RData",sep="."))
+  save(X,params,p,file = output_file_name)
+
   ## name of initial ensemble forecast file
   print(sprintf("The particle filter forecast for site Num %.f is saved as %s",site.number,pdf_file_name))
   

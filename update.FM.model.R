@@ -14,7 +14,6 @@ update.FM.model <- function(site.number) {
   source("ciEnvelope.R")
   source("find.extreme.GCC.NDVI.R")
   
-  current.year <- strftime(Sys.Date(),"%Y")
   source("global_input_parameters.R")
   model.start.DOY <- global_input_parameters$model.start.DOY
   model = global_input_parameters$model
@@ -25,6 +24,15 @@ update.FM.model <- function(site.number) {
   read.in <- source(last.date.filename)
   last.forecast.date <- as.Date(read.in$value)
   last.date.assimilated <- last.forecast.date
+  current.year = as.numeric(strftime(last.date.assimilated,"%Y"))
+  
+  #current.year <- strftime(Sys.Date(),"%Y")
+  if(!is.null(global_input_parameters$training.end.date)){
+    start.year = (as.numeric(strftime(global_input_parameters$training.end.date,"%Y"))+1)
+  } else {
+    start.year = current.year
+  }
+  
   
   # load the GCC data:
   gcc.data <- read.csv( sprintf("gcc_data_site%i.csv",site.number) )
@@ -41,7 +49,7 @@ update.FM.model <- function(site.number) {
   first.year <- as.numeric(strftime(global_input_parameters$data.start.date, "%Y"))
   
   max_min_ndvi_gcc = find.extreme.GCC.NDVI(site.number, first.year, 
-                                           as.numeric(current.year)-1, 
+                                           as.numeric(start.year)-1, 
                                            use.interannual.means=TRUE)
   ndvi_max = max_min_ndvi_gcc[1]
   ndvi_min = max_min_ndvi_gcc[2]
@@ -89,7 +97,7 @@ update.FM.model <- function(site.number) {
   # while loop until you get to the present day:
   repeat{
     # Keep this break statement floating at the top of the repeat loop:
-    if(forecast.date > current.date) {break} # This will end the loop
+    if(forecast.date > current.date | as.numeric(strftime(forecast.date,"%Y")) > current.year) {break} # This will end the loop
     
     print(paste("Running particle filter for",forecast.date,"at site",site.number,model))
     todays.data <- all.data[as.Date(all.data$date) == forecast.date,]
@@ -128,6 +136,11 @@ update.FM.model <- function(site.number) {
       index = sample.int(num.ensemble, num.ensemble, replace = TRUE, prob = likelihood)
       # replace our previous guess with the PF output:
       X[output.index,] = X[output.index,index] #pmin(1,pmax(0,X[output.index,index]))
+      if(length(params)>0){ 
+        for(i in 1:length(params)){
+          params[[i]] = params[[i]][index]
+        }
+      }
       
       #### Forecast step:
       # as long as we're not at the end of the year:
@@ -138,6 +151,14 @@ update.FM.model <- function(site.number) {
                 X[t,] = pmax(0,pmin(1,rnorm(num.ensemble,X[t-1,],proc.stdev)))
 #                X[t,] = rnorm(num.ensemble,X[t-1,],proc.stdev)
             }
+        } else if (model == "Threshold_Day_Logistic"){
+          k = params$k
+          r = params$r
+          for(t in (output.index+1):output.days){
+            mu = ifelse(t>k,X[t-1,]-r*X[t-1,]*(1-X[t-1,]),1)
+            X[t,] = pmax(0,pmin(1,
+                      rnorm(num.ensembles,mu,proc.stdev)))
+          }
         } else {
             print(paste("Forecast for model not supported::",model))   
         }
@@ -146,7 +167,7 @@ update.FM.model <- function(site.number) {
       ##### end of forecast loop
       
       # Plot the forecast!      
-      X.ci  = apply(X,1,quantile,c(0.025,0.5,0.975))
+      X.ci  = apply(X,1,quantile,c(0.025,0.25,0.5,0.75,0.975))
       
       #### save plot produced to PDF
       ## name of output file
@@ -170,11 +191,12 @@ update.FM.model <- function(site.number) {
       plottable.data <- subset(plottable.data,
                                as.Date(plottable.data$date) >= model.start.DOY)
       
-      plot(model.start.DOY:365,X.ci[2,],type='n',
+      plot(model.start.DOY:365,X.ci[3,],type='n',
            main=paste("Particle Filter Forecast:",forecast.date),
            xlab="Day of Year",ylab="Pheno-state",ylim=c(0,1.2))
-      ciEnvelope(model.start.DOY:365,X.ci[1,],X.ci[3,],col="light grey")
-      lines(model.start.DOY:365,X.ci[2,],
+      ciEnvelope(model.start.DOY:365,X.ci[1,],X.ci[5,],col="light grey")
+      ciEnvelope(model.start.DOY:365,X.ci[2,],X.ci[4,],col="grey")
+      lines(model.start.DOY:365,X.ci[3,],
             main=paste("Particle Filter Forecast:",forecast.date),
             xlab="Day of Year",ylab="Pheno-state")
       
@@ -191,24 +213,32 @@ update.FM.model <- function(site.number) {
                       as.character(forecast.date),"png",sep=".")
     png(file=paste("png",png.file.name,sep="/"))
 
-    plot(model.start.DOY:365,X.ci[2,],type='n',
+    plot(model.start.DOY:365,X.ci[3,],type='n',
        main=paste("Particle Filter Forecast:",forecast.date),
        xlab="Day of Year",ylab="Pheno-state",ylim=c(0,1.2))
-    ciEnvelope(model.start.DOY:365,X.ci[1,],X.ci[3,],col="light grey")
-    lines(model.start.DOY:365,X.ci[2,],
-      main=paste("Particle Filter Forecast:",forecast.date),
-      xlab="Day of Year",ylab="Pheno-state")
+    ciEnvelope(model.start.DOY:365,X.ci[1,],X.ci[5,],col="light grey")
+    ciEnvelope(model.start.DOY:365,X.ci[2,],X.ci[4,],col="grey")
+    lines(model.start.DOY:365,X.ci[3,],
+        main=paste("Particle Filter Forecast:",forecast.date),
+        xlab="Day of Year",ylab="Pheno-state")
     points(non.leap.year.doys, plottable.data$ndvi, pch="+",cex=0.8)
     points(non.leap.year.doys, plottable.data$gcc.mean, pch="o",cex=0.5)
 
     dev.off()
-              
+
+    source("ForecastThreshold.R")
+    png.file.name = paste("ThresholdForecast",as.character(site.number),model,
+                      as.character(forecast.date),"png",sep=".")
+    png(file=paste("png",png.file.name,sep="/"))
+    p[output.index,] = ForecastThreshold(X)
+    dev.off()
+
       #### append output to pdf files that were created in the forecast model:
 
       # Save the most recent output data to file:
       output_file_name = paste0("forecastRData/",paste("ForecastModel.X.out.site", as.character(site.number),model,forecast.date,
                          "RData",sep="."))
-      save(X,file=output_file_name)   
+      save(X,params,p,file=output_file_name)   
 
       # Write the last forecast date to file:
       date.string <- as.character(last.date.assimilated)
