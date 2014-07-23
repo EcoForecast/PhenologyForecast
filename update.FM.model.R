@@ -25,7 +25,8 @@ update.FM.model <- function(site.number) {
   last.forecast.date <- as.Date(read.in$value)
   last.date.assimilated <- last.forecast.date
   current.year = as.numeric(strftime(last.date.assimilated,"%Y"))
-  
+  print(last.date.assimilated) 
+
   #current.year <- strftime(Sys.Date(),"%Y")
   if(!is.null(global_input_parameters$training.end.date)){
     start.year = (as.numeric(strftime(global_input_parameters$training.end.date,"%Y"))+1)
@@ -69,6 +70,8 @@ update.FM.model <- function(site.number) {
   output_file_name = paste0("forecastRData/",paste("ForecastModel.X.out.site", as.character(site.number),model,last.forecast.date, 
                            "RData",sep="."))
   load(output_file_name)
+
+  print(output_file_name)
   
   # Number of ensemble members:
   num.ensemble <- global_input_parameters$num.ensembles
@@ -81,6 +84,7 @@ update.FM.model <- function(site.number) {
   # our state-space model
   file_name = paste('Jags.SS.out.site',as.character(site.number), model,'RData',sep=".")
   load(file_name)
+  print(file_name)
   out$parms = as.data.frame(out$parms)
   
   # get the precisions from the state space model output, convert to stdevs:
@@ -94,6 +98,8 @@ update.FM.model <- function(site.number) {
   ndvi.stdev = median(ndvi.stdev)
   proc.stdev = median(proc.stdev)
   
+  print(forecast.date)
+
   # while loop until you get to the present day:
   repeat{
     # Keep this break statement floating at the top of the repeat loop:
@@ -157,7 +163,7 @@ update.FM.model <- function(site.number) {
           for(t in (output.index+1):output.days){
             mu = ifelse(t>k,X[t-1,]-r*X[t-1,]*(1-X[t-1,]),1)
             X[t,] = pmax(0,pmin(1,
-                      rnorm(num.ensembles,mu,proc.stdev)))
+                      rnorm(num.ensemble,mu,proc.stdev)))
           }
         } else {
             print(paste("Forecast for model not supported::",model))   
@@ -211,7 +217,7 @@ update.FM.model <- function(site.number) {
       ## also output in png for the webpage
     png.file.name = paste("ParticleFilterForecast",as.character(site.number),model,
                       as.character(forecast.date),"png",sep=".")
-    png(file=paste("png",png.file.name,sep="/"))
+    png(file=paste("png",png.file.name,sep="/"),width=1000,height=1000)
 
     plot(model.start.DOY:365,X.ci[3,],type='n',
        main=paste("Particle Filter Forecast:",forecast.date),
@@ -229,7 +235,7 @@ update.FM.model <- function(site.number) {
     source("ForecastThreshold.R")
     png.file.name = paste("ThresholdForecast",as.character(site.number),model,
                       as.character(forecast.date),"png",sep=".")
-    png(file=paste("png",png.file.name,sep="/"))
+    png(file=paste("png",png.file.name,sep="/"),width=1000,height=1000)
     p[output.index,] = ForecastThreshold(X)
     dev.off()
 
