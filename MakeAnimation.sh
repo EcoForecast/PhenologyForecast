@@ -10,7 +10,7 @@ do cd "$d";
 
 for f in *${1}*${2}*.pdf; 
 do 
-convert ./"$f" ./"${f%.pdf}.jpg"; 
+convert -size 1000x1000 ./"$f" ./"${f%.pdf}.jpg"; 
 done
 
 convert -delay 15 *.jpg -loop 0 Site"${d%.pdf}.${1}.${2}.gif";
