@@ -4,8 +4,11 @@ make.SS.plots <- function(out,time,
   
   time_year = as.numeric(format(as.Date(time), "%Y"))
   current.year = as.numeric(strftime(Sys.Date(),"%Y"))
+  if(!is.null(global_input_parameters$training.end.date)){
+    current.year = (as.numeric(strftime(global_input_parameters$training.end.date,"%Y"))+1)
+  }
   years <- unique(time_year)
-  years <- years[years != current.year]
+  years <- years[years < current.year]
  
   plot_file_name = paste('Jags.SS.out.site',as.character(site.number), model,'pdf',sep=".")
   

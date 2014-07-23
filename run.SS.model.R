@@ -22,6 +22,9 @@ run.SS.model <- function(site.number){
   years.with.data <- unique(years[!no.data.vec])
   all.data <- subset(all.data, years %in% years.with.data )
   current.year <- as.numeric(strftime(Sys.Date(), "%Y"))
+  if(!is.null(global_input_parameters$training.end.date)){
+    current.year = (as.numeric(strftime(global_input_parameters$training.end.date,"%Y"))+1):current.year
+  }
   
   # Define fall dates:
   source("global_input_parameters.R")
