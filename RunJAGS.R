@@ -35,6 +35,39 @@ RunJAGS <- function(data,n.iter,n.chains){
 
   }"
   
+  Threshold_Day_Logistic= "
+  model{
+  for(yr in 1:ny){
+  
+  #### Data Model: NDVI
+  for(i in 1:n){
+  y[yr,i] ~ dnorm(x[yr,i],tau_ndvi)
+  }
+  
+  #### Data Model: GCC
+  for(i in 1:n){
+  z[yr,i] ~ dnorm(x[yr,i],tau_gcc)
+  }
+  
+  #### Process Model
+  for(i in 2:n){
+  color[yr,i] <- ifelse(i > k,x[yr,i-1] - r * x[yr,i-1] * (1-x[yr,i-1]),1 )
+  lcolor[yr,i] ~ dnorm(color[yr,i],tau_add)
+  x[yr,i] <- min(1,max(0,lcolor[yr,i]))
+  }
+  
+  x[yr,1] ~ dnorm(x_ic,tau_ic)
+}  ## end loop over years
+  
+  #### Priors
+  tau_ndvi ~ dgamma(a_ndvi,r_ndvi)
+  tau_gcc ~ dgamma(a_gcc,r_gcc)
+  tau_add ~ dgamma(a_add,r_add)  
+  r ~ dexp(0.148) # Exp is the maximum entropy distribution for constraints of positive with givn mean
+                  # 0.148 is from Richardson et al. 2006.
+  k ~ dunif(1,180)
+  }"
+  
 
   LogitRandomWalk= "
   model{
@@ -102,7 +135,8 @@ RandomWalk= "
   
   ModisGCCModel = switch(model,
                          LogisticGrowth = LogisticGrowth,
-                         LogitRandomWalk = LogitRandomWalk)
+                         LogitRandomWalk = LogitRandomWalk,
+                         Threshold_Day_Logistic = Threshold_Day_Logistic)
   
   ## for some models, data needs to be a vector
   if(model %in% "RandomWalk"){
@@ -132,7 +166,7 @@ RandomWalk= "
   
   ## run MCMC
   jags.out   <- coda.samples (model = j.model,
-                              variable.names = c("x","tau_add","tau_ndvi","tau_gcc","r"),
+                              variable.names = c("x","tau_add","tau_ndvi","tau_gcc","r","k"),
                               n.iter = n.iter)
   return(jags.out)
 }
